@@ -1,0 +1,23 @@
+<script type="text/javascript">
+    RED.nodes.registerType('model', {
+        category: 'sscma',
+        color: '#2980b9',
+        defaults: {
+            uri: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-cube",
+        label: function () {
+            return this.name || "model";
+        }
+    });
+</script>
+
+<!-- Define the node's properties and UI here -->
+<script type="text/html" data-template-name="model">
+    <div class="form-row">
+        <label for="node-input-uri"><i class="fa fa-file"></i> URI</label>
+        <input type="text" id="node-input-uri">
+    </div>
+</script>

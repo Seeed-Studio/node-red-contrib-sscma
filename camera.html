@@ -1,0 +1,93 @@
+<script type="text/html" data-template-name="camera">
+<button class="btn btn-default" id="node-output-add">Add</button>
+<table id="node-output-table" class="node-input-table">
+    <thead>
+        <tr>
+            <th>Width</th>
+            <th>Height</th>
+            <th>Format</th>
+            <th>FPS</th>
+            <th>Remove</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+</script>
+
+<script type="text/javascript">
+
+    (function () {
+        RED.nodes.registerType('camera', {
+            category: 'sscma',
+            color: '#a6bbcf',
+            defaults: {
+                outputs: { value: 1 },
+                name: { value: "" },
+                channels: {
+                    value: [
+                        { width: 640, height: 640, format: 0, fps: 30 },
+                    ]
+                },
+            },
+            inputs: 0,
+            outputs: 1,
+            icon: "font-awesome/fa-camera",
+            label: function () {
+                return this.name || "camera";
+            },
+            oneditprepare: function () {
+                console.log("oneditprepare");
+                var node = this;
+
+                function updateTable() {
+                    var table = $("#node-output-table");
+                    var body = table.find("tbody");
+                    body.empty();
+                    node.channels.forEach(function (ch) {
+                        var row = $("<tr/>");
+                        row.append($("<td><input type=\"number\" placeholder=\"Width\" value=\"640\"></td>"));
+                        row.append($("<td><input type=\"number\" placeholder=\"Height\" value=\"640\"></td>"));
+                        row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">MJPEG</option></select></td>"));
+                        row.append($("<td><input type=\"number\" placeholder=\"FPS\" value=\"30\"></td>"));
+                        row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
+                        body.append(row);
+                        row.find("input[type=number]").eq(0).val(ch.width);
+                        row.find("input[type=number]").eq(1).val(ch.height);
+                        row.find("select").val(ch.format);
+                        row.find("input[type=number]").eq(2).val(ch.fps);
+                    });
+                    this.outputs = node.channels.length;
+                }
+
+                $("#node-output-add").click(function () {
+                    console.log("add new row")
+                    var table = $("#node-output-table");
+                    var body = table.find("tbody");
+                    var row = $("<tr/>");
+                    row.append($("<td><input type=\"number\" placeholder=\"Width\" value=\"640\"></td>"));
+                    row.append($("<td><input type=\"number\" placeholder=\"Height\" value=\"640\"></td>"));
+                    row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">MJPEG</option></select></td>"));
+                    row.append($("<td><input type=\"number\" placeholder=\"FPS\" value=\"30\"></td>"));
+                    row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
+                    body.append(row);
+                });
+
+                updateTable();
+            },
+            oneditsave: function () {
+                console.log("oneditsave");
+                this.channels = $("#node-output-table").find("tbody tr").map(function () {
+                    return {
+                        width: $(this).find("input[type=number]").eq(0).val(),
+                        height: $(this).find("input[type=number]").eq(1).val(),
+                        format: $(this).find("select").val(),
+                        fps: $(this).find("input[type=number]").eq(2).val()
+                    };
+                }).get();
+                console.log(this.channels);
+                this.outputs = this.channels.length;
+            }
+        });
+    })();
+</script>

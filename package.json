@@ -1,0 +1,12 @@
+{
+    "name": "node-red-sscma",
+    "node-red": {
+        "nodes": {
+            "camera": "camera.js",
+            "model": "model.js",
+            "save": "save.js",
+            "stream": "stream.js"
+        }
+    },
+    "version": "0.0.1"
+}
