@@ -1,9 +1,21 @@
+<script type="text/html" data-template-name="save">
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i><span>broker</span></label>
+        <input type="text" id="node-input-client">
+    </div>
+    <div class="form-row">
+        <label for="node-input-uri"><i class="fa fa-file"></i>URI</label>
+        <input type="text" id="node-input-uri">
+    </div>
+</script>
+
 <script type="text/javascript">
     RED.nodes.registerType('save', {
         category: 'sscma',
         color: '#c4c4c4',
         defaults: {
-            uri: { value: "" }
+            uri: { value: "" },
+            client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 1,
         outputs: 0,
@@ -12,12 +24,4 @@
             return this.name || "save";
         }
     });
-</script>
-
-<!-- Define the node's properties and UI here -->
-<script type="text/html" data-template-name="save">
-    <div class="form-row">
-        <label for="node-input-uri"><i class="fa fa-file"></i>URI</label>
-        <input type="text" id="node-input-uri">
-    </div>
 </script>

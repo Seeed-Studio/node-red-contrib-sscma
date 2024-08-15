@@ -1,0 +1,59 @@
+<script type="text/html" data-template-name="sscma">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-host"><i class="fa fa-globe"></i> Host</label>
+        <input type="text" id="node-input-host" placeholder="localhost">
+    </div>
+    <div class="form-row">
+        <label for="node-input-port"><i class="fa fa-plug"></i> Port</label>
+        <input type="number" id="node-input-port" placeholder="1883">
+    </div>
+    <div class="form-row">
+        <label for="node-input-clientid"><i class="fa fa-id-badge"></i> Client ID</label>
+        <input type="text" id="node-input-clientid" placeholder="Optional">
+    </div>
+    <div class="form-row">
+        <label for="node-input-username"><i class="fa fa-user"></i> Username</label>
+        <input type="text" id="node-input-username" placeholder="Optional">
+    </div>
+    <div class="form-row">
+        <label for="node-input-password"><i class="fa fa-lock"></i> Password</label>
+        <input type="password" id="node-input-password" placeholder="Optional">
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('sscma', {
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            host: { value: "localhost" },
+            port: { value: 1883 },
+            clientid: { value: "" },
+            username: { value: "" },
+            password: { value: "" }
+        },
+        oneditprepare: function () {
+            var node = this;
+            $("#node-input-host").val(this.host);
+            $("#node-input-port").val(this.port);
+            $("#node-input-clientid").val(this.clientid);
+            $("#node-input-username").val(this.username);
+            $("#node-input-password").val(this.password);
+        },
+        oneditsave: function () {
+            var node = this;
+            this.host = $("#node-input-host").val();
+            this.port = $("#node-input-port").val();
+            this.clientid = $("#node-input-clientid").val();
+            this.username = $("#node-input-username").val();
+            this.password = $("#node-input-password").val();
+        },
+        label: function () {
+            return "sscma"
+        }
+    });
+</script>

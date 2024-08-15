@@ -1,9 +1,43 @@
+<script type="text/html" data-template-name="model">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i><span>broker</span></label>
+        <input type="text" id="node-input-client">
+    </div>
+    <div class="form-row">
+        <label for="node-input-uri"><i class="fa fa-file"></i> URI</label>
+        <input type="text" id="node-input-uri">
+    </div>
+    <div class="form-row">
+        <label for="node-input-tscore"><i class="fa fa-file"></i> Confidence</label>
+        <input type="text" id="node-input-tscore">
+    </div>
+    <div class="form-row">
+        <label for="node-input-tiou"><i class="fa fa-file"></i> IOU</label>
+        <input type="text" id="node-input-tiou">
+    </div>
+    <div class="form-row">
+        <label for="node-input-debug"><i class="fa fa-tag"></i> Debug</label>
+        <input type="checkbox" id="node-input-debug">
+    </div>
+
+    </div>
+</script>
+
 <script type="text/javascript">
     RED.nodes.registerType('model', {
         category: 'sscma',
         color: '#2980b9',
         defaults: {
-            uri: { value: "" }
+            name: { value: "" },
+            uri: { value: "" },
+            tscore: { value: 0.45 },
+            tiou: { value: 0.25 },
+            client: { type: "sscma", required: true, label: RED._("sscma") },
+            debug: { value: false }
         },
         inputs: 1,
         outputs: 1,
@@ -12,12 +46,4 @@
             return this.name || "model";
         }
     });
-</script>
-
-<!-- Define the node's properties and UI here -->
-<script type="text/html" data-template-name="model">
-    <div class="form-row">
-        <label for="node-input-uri"><i class="fa fa-file"></i> URI</label>
-        <input type="text" id="node-input-uri">
-    </div>
 </script>

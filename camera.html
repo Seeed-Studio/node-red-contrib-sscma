@@ -1,4 +1,12 @@
 <script type="text/html" data-template-name="camera">
+<div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+    <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+</div>
+<div class="form-row">
+    <label for="node-input-client"><i class="fa fa-globe"></i><span>broker</span></label>
+    <input type="text" id="node-input-client">
+</div>
 <button class="btn btn-default" id="node-output-add">Add</button>
 <table id="node-output-table" class="node-input-table">
     <thead>
@@ -20,7 +28,7 @@
     (function () {
         RED.nodes.registerType('camera', {
             category: 'sscma',
-            color: '#a6bbcf',
+            color: '#16bbcf',
             defaults: {
                 outputs: { value: 1 },
                 name: { value: "" },
@@ -29,6 +37,7 @@
                         { width: 640, height: 640, format: 0, fps: 30 },
                     ]
                 },
+                client: { type: "sscma", required: true, label: RED._("sscma") },
             },
             inputs: 0,
             outputs: 1,
@@ -48,7 +57,7 @@
                         var row = $("<tr/>");
                         row.append($("<td><input type=\"number\" placeholder=\"Width\" value=\"640\"></td>"));
                         row.append($("<td><input type=\"number\" placeholder=\"Height\" value=\"640\"></td>"));
-                        row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">MJPEG</option></select></td>"));
+                        row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">H.265</option></select></td>"));
                         row.append($("<td><input type=\"number\" placeholder=\"FPS\" value=\"30\"></td>"));
                         row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
                         body.append(row);
@@ -67,7 +76,7 @@
                     var row = $("<tr/>");
                     row.append($("<td><input type=\"number\" placeholder=\"Width\" value=\"640\"></td>"));
                     row.append($("<td><input type=\"number\" placeholder=\"Height\" value=\"640\"></td>"));
-                    row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">MJPEG</option></select></td>"));
+                    row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">H.265</option></select></td>"));
                     row.append($("<td><input type=\"number\" placeholder=\"FPS\" value=\"30\"></td>"));
                     row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
                     body.append(row);

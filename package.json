@@ -5,7 +5,8 @@
             "camera": "camera.js",
             "model": "model.js",
             "save": "save.js",
-            "stream": "stream.js"
+            "stream": "stream.js",
+            "sscma": "sscma.js"
         }
     },
     "version": "0.0.1"

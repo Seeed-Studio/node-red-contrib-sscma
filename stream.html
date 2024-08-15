@@ -1,22 +1,12 @@
-<script type="text/javascript">
-    RED.nodes.registerType('stream', {
-        category: 'sscma',
-        color: '#7AA6E0',
-        defaults: {
-            protocol: { value: 0 },
-            port: { value: 8080 },
-        },
-        inputs: 1,
-        outputs: 0,
-        icon: "font-awesome/fa-video-camera",
-        label: function () {
-            return this.name || "stream";
-        }
-    });
-</script>
-
-<!-- Define the node's properties and UI here -->
 <script type="text/html" data-template-name="stream">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i><span>broker</span></label>
+        <input type="text" id="node-input-client">
+    </div>
     <div class="form-row">
         <label for="node-input-uri"><i class="fa fa-globe"></i> protocol</label>
         <select id="node-input-protocol" style="width: 70%;">
@@ -27,4 +17,23 @@
         <label for="node-input-uri"><i class="fa fa-globe"></i> port</label>
         <input type="text" id="node-input-port">
     </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('stream', {
+        category: 'sscma',
+        color: '#7AA6E0',
+        defaults: {
+            name: { value: "" },
+            protocol: { value: 0 },
+            port: { value: 8080 },
+            client: { type: "sscma", required: true, label: RED._("sscma") },
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "font-awesome/fa-video-camera",
+        label: function () {
+            return this.name || "stream";
+        },
+    });
 </script>
