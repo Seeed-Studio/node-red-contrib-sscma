@@ -61,7 +61,6 @@ module.exports = function (RED) {
         node.brokerurl = "mqtt://" + node.host;
         node.api = "v0";
 
-        console.log("Broker URL: " + node.brokerurl);
 
         node.register = function (Node) {
             node.users[Node.id] = Node;
@@ -133,14 +132,12 @@ module.exports = function (RED) {
                             }
                         }
                         const topic = "sscma/" + node.api + "/recamera/node/out/+"
-                        console.log("subscribing to " + topic);
                         node.client.subscribe(topic, function (err) {
                             if (err) { console.log(err); }
                         });
                         // TODO: send connection acknowledgement to server
                     });
                     node.client.on("message", function (topic, message) {
-                        console.log("message received: " + topic);
                         const id = topic.split("/").slice(-1)[0];
                         if (node.users[id]) {
                             try {
@@ -148,7 +145,6 @@ module.exports = function (RED) {
                                     type: "sscma",
                                     payload: JSON.parse(message)
                                 };
-                                console.log("sending message to " + id);
                                 node.users[id].receive(msg);
                             } catch (err) {
                                 console.log("Error parsing message: " + err);
@@ -226,7 +222,6 @@ module.exports = function (RED) {
         }
 
         node.request = function (id, cmd, data, done) {
-            console.log("requesting " + cmd + " for node: " + id);
             
             const topic = "sscma/" + node.api + "/recamera/node/in/" + id;
             const msg = {
@@ -237,7 +232,6 @@ module.exports = function (RED) {
             const options = {
                 qos: 0
             };
-            console.log("sending message to " + topic);
             node.client.publish(topic, JSON.stringify(msg), options, function (err) {
                 if (err) {
                     console.log("Error sending request: " + err);

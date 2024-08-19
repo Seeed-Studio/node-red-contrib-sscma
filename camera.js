@@ -5,14 +5,10 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
         const node = this;
         node.client = RED.nodes.getNode(n.client);
-        node.config = {
-            channels: n.channels,
-        };
-
-        console.log("config", JSON.stringify(node.config));
+        node.config = n.channels;
 
         node.receive = function (msg) {
-            console.log("msg", JSON.stringify(msg));
+    
         }
 
         if (node.client) {

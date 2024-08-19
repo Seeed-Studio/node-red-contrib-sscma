@@ -4,10 +4,10 @@
     <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
 </div>
 <div class="form-row">
-    <label for="node-input-client"><i class="fa fa-globe"></i><span>broker</span></label>
+    <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
     <input type="text" id="node-input-client">
 </div>
-<button class="btn btn-default" id="node-output-add">Add</button>
+<!-- <button class="btn btn-default" id="node-output-add">Add</button> -->
 <table id="node-output-table" class="node-input-table">
     <thead>
         <tr>
@@ -30,23 +30,24 @@
             category: 'sscma',
             color: '#16bbcf',
             defaults: {
-                outputs: { value: 1 },
+                outputs: { value: 3 },
                 name: { value: "" },
                 channels: {
                     value: [
-                        { width: 640, height: 640, format: 0, fps: 30 },
+                        { width: 1920, height: 1080, format: 4, fps: 30 },
+                        { width: 1920, height: 1080, format: 3, fps: 30 },
+                        { width: 640, height: 640, format: 1, fps: 35 }
                     ]
                 },
                 client: { type: "sscma", required: true, label: RED._("sscma") },
             },
             inputs: 0,
-            outputs: 1,
+            outputs: 3,
             icon: "font-awesome/fa-camera",
             label: function () {
                 return this.name || "camera";
             },
             oneditprepare: function () {
-                console.log("oneditprepare");
                 var node = this;
 
                 function updateTable() {
@@ -57,9 +58,9 @@
                         var row = $("<tr/>");
                         row.append($("<td><input type=\"number\" placeholder=\"Width\" value=\"640\"></td>"));
                         row.append($("<td><input type=\"number\" placeholder=\"Height\" value=\"640\"></td>"));
-                        row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">H.265</option></select></td>"));
+                        row.append($("<td><select disabled><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">H.265</option></select></td>"));
                         row.append($("<td><input type=\"number\" placeholder=\"FPS\" value=\"30\"></td>"));
-                        row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
+                        //row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
                         body.append(row);
                         row.find("input[type=number]").eq(0).val(ch.width);
                         row.find("input[type=number]").eq(1).val(ch.height);
@@ -70,22 +71,20 @@
                 }
 
                 $("#node-output-add").click(function () {
-                    console.log("add new row")
                     var table = $("#node-output-table");
                     var body = table.find("tbody");
                     var row = $("<tr/>");
                     row.append($("<td><input type=\"number\" placeholder=\"Width\" value=\"640\"></td>"));
                     row.append($("<td><input type=\"number\" placeholder=\"Height\" value=\"640\"></td>"));
-                    row.append($("<td><select><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">H.265</option></select></td>"));
+                    row.append($("<td><select disabled><option value=\"0\">AUTO</option><option value=\"1\">RGB888</option><option value=\"3\">H.264</option><option value=\"4\">H.265</option></select></td>"));
                     row.append($("<td><input type=\"number\" placeholder=\"FPS\" value=\"30\"></td>"));
-                    row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
+                    //row.append($("<td><button class=\"btn btn-danger\">Remove</button></td>"));
                     body.append(row);
                 });
 
                 updateTable();
             },
             oneditsave: function () {
-                console.log("oneditsave");
                 this.channels = $("#node-output-table").find("tbody tr").map(function () {
                     return {
                         width: $(this).find("input[type=number]").eq(0).val(),
@@ -94,7 +93,6 @@
                         fps: $(this).find("input[type=number]").eq(2).val()
                     };
                 }).get();
-                console.log(this.channels);
                 this.outputs = this.channels.length;
             }
         });
