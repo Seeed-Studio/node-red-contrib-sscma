@@ -10,7 +10,7 @@ module.exports = function (RED) {
         node.receive = function (msg) {
     
         }
-
+        
         if (node.client) {
             node.client.register(node);
         }

@@ -6,8 +6,9 @@
             "model": "model.js",
             "save": "save.js",
             "stream": "stream.js",
+            "preview": "preview.js",
             "sscma": "sscma.js"
         }
     },
-    "version": "0.0.1"
+    "version": "0.0.2"
 }

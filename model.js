@@ -9,15 +9,15 @@ module.exports = function (RED) {
         node.debug = config.debug;
         node.config = {
             uri: node.uri,
-            tiou: node.tiou,
-            tscore: node.tscore,
+            tiou: parseFloat(node.tiou),
+            tscore: parseFloat(node.tscore),
             debug: node.debug
         }
 
         node.receive = function (msg) {
             if (msg.type === "sscma") {
                 node.send(msg)
-            } 
+            }
         }
 
         if (node.client) {

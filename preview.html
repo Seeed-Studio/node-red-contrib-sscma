@@ -1,0 +1,28 @@
+<script type="text/html" data-template-name="preview">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> 名称</label>
+        <input type="text" id="node-input-name" placeholder="节点名称">
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType('preview', {
+        category: 'function',
+        color: '#a6bbcf',
+        inputs: 1,
+        outputs: 0,
+        icon: 'font-awesome/fa-eye',
+        align: 'right',
+        label: function() {
+            return this.name || "preview";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        defaults: {
+            name: { value: "" }
+        },
+        oneditprepare: function() {
+        }
+    });
+</script>
