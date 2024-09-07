@@ -7,7 +7,7 @@ module.exports = function (RED) {
         node.client = RED.nodes.getNode(n.client);
         node.config = [
             {
-                channel:0,
+                channel: 0,
                 enabled: false
 
             },
@@ -23,22 +23,21 @@ module.exports = function (RED) {
                 enabled: false
             }
         ]
-        
 
         RED.nodes.eachNode((n) => {
-           if(node.wires.some(w => w.includes(n.id))) {
-            console.log(n.type)
-               if(n.type == 'model') {
-                node.config[0].enabled = true
-               }
-               if(n.type == 'save' || n.type == 'stream') {
-                node.config[2].enabled = true
-               }
-           }
+            if (node.wires.some(w => w.includes(n.id))) {
+                if (n.d) { 
+                    return;
+                }
+                if (n.type == 'model') {
+                    node.config[0].enabled = true
+                }else if (n.type == 'save' || n.type == 'stream') {
+                    node.config[2].enabled = true
+                }
+            }
         })
 
         node.receive = function (msg) {
-	    //console.log(msg);
             if (msg.type == 'sscma' && msg.payload.code == 0) {
                 const payload = {
                     type: "node",

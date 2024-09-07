@@ -13,18 +13,14 @@ module.exports = function (RED) {
             tscore: parseFloat(node.tscore),
             debug: node.debug
         }
-
         node.receive = function (msg) {
-            //console.log(msg);
             if (msg.type === "sscma") {
                 node.send(msg)
             }
         }
-
         if (node.client) {
             node.client.register(node);
         }
-
         node.on('close', function (removed, done) {
             if (node.client) {
                 node.client.deregister(node, done, removed);
