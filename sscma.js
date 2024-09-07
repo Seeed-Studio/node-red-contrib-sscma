@@ -71,9 +71,9 @@ module.exports = function (RED) {
                 if (node.autoConnect) {
                     node.connect();
                     //update nodes status
-                    setTimeout(function () {
-                        updateStatus(node, true)
-                    }, 1)
+                    // setTimeout(function () {
+                    //     updateStatus(node, true)
+                    // }, 1)
                 }
             }
             let dependencies = [];
@@ -94,6 +94,7 @@ module.exports = function (RED) {
                 "config": Node.config,
                 "dependencies": dependencies,
             }
+            Node.status({ fill: "yellow", shape: "ring", text: "node-red:common.status.connecting" });
             node.request(Node.id, "create", create);
         };
 
@@ -118,7 +119,7 @@ module.exports = function (RED) {
             if (node.canConnect()) {
                 node.closing = false;
                 node.connecting = true;
-                setStatusConnecting(node, true);
+                //setStatusConnecting(node, true);
                 try {
                     if (node.client) {
                         //belt and braces to avoid left over clients
@@ -137,7 +138,7 @@ module.exports = function (RED) {
                             callback();
                         }
                         callbackDone = true;
-                        setStatusConnected(node, true);
+                        //setStatusConnected(node, true);
                         // Re-subscribe to stored topics
                         for (var s in node.subscriptions) {
                             if (node.subscriptions.hasOwnProperty(s)) {
@@ -158,11 +159,18 @@ module.exports = function (RED) {
                         const id = topic.split("/").slice(-1)[0];
                         if (node.users[id]) {
                             try {
+                                const payload = JSON.parse(message)
+                                if (payload.code != 0) {
+                                    node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
+                                } else {
+                                    node.users[id].status({ fill: "green", shape: "ring", text: "node-red:common.status.connected" });
+                                }
                                 var msg = {
                                     type: "sscma",
-                                    payload: JSON.parse(message)
+                                    payload: payload
                                 };
                                 node.users[id].receive(msg);
+
                             } catch (err) {
                                 console.log("Error parsing message: " + err);
                             }
