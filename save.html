@@ -4,8 +4,20 @@
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
-        <label for="node-input-uri"><i class="fa fa-file"></i>URI</label>
-        <input type="text" id="node-input-uri">
+        <label for="node-input-storage"><i class="fa fa-file"></i>Storage</label>
+        <select id="node-input-storage">
+            <option value="local">Local</option>
+            <option value="external">External</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-slice"><i class="fa fa-file"></i>Slice</label>
+        <select id="node-input-slice">
+            <option value="300">5</option>
+            <option value="600">10</option>
+            <option value="1800">30</option>
+        </select>
+        <span> Minutes</span>
     </div>
 </script>
 
@@ -14,7 +26,8 @@
         category: 'sscma',
         color: '#c4c4c4',
         defaults: {
-            uri: { value: "" },
+            slice: { value: "30" },
+            storage: { value: "local" },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 1,

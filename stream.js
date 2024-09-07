@@ -1,11 +1,18 @@
+const session = require("express-session");
+
 module.exports = function (RED) {
     function StreamNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
         node.client = RED.nodes.getNode(config.client);
+        node.config = {
+            protocol: config.protocol,
+            port: +config.port,
+            session: config.session
+        }
 
         node.receive  = function(msg) {
-            node.send(msg);
+           console.log(node.type, msg);
         }
 
         if (node.client) {
