@@ -5,12 +5,52 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
         const node = this;
         node.client = RED.nodes.getNode(n.client);
-        node.config = n.channels;
+        node.config = [
+            {
+                channel:0,
+                enabled: false
+
+            },
+            {
+                channel: 1,
+                enabled: false
+            },
+            {
+                channel: 2,
+                width: +n.width || 640,
+                height: +n.height || 480,
+                fps: +n.fps || 30,
+                enabled: false
+            }
+        ]
+        
+
+        RED.nodes.eachNode((n) => {
+           if(node.wires.some(w => w.includes(n.id))) {
+            console.log(n.type)
+               if(n.type == 'model') {
+                node.config[0].enabled = true
+               }
+               if(n.type == 'save' || n.type == 'stream') {
+                node.config[2].enabled = true
+               }
+           }
+        })
 
         node.receive = function (msg) {
-    
+	    //console.log(msg);
+            if (msg.type == 'sscma' && msg.payload.code == 0) {
+                const payload = {
+                    type: "node",
+                    payload: {
+                        type: "camera",
+                        id: node.id,
+                    }
+                }
+                node.send(payload);
+            }
         }
-        
+
         if (node.client) {
             node.client.register(node);
         }

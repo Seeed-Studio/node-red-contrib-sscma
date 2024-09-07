@@ -22,14 +22,11 @@ module.exports = function (RED) {
 
             const connection = { req, res };
             connections.push(connection);
-            console.log('Client connected', connections.length);
             req.on('close', () => {
-                console.log('Client disconnected');
                 connections = connections.filter(c => c !== connection);
                 res.end();
             });
         });
-
 
         console.log(`Serving preview at http://localhost:1880/preview/${node.id}`);
         RED.httpAdmin.get(`/preview/${node.id}`, function (req, res) {

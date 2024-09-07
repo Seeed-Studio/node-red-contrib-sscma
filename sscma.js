@@ -52,6 +52,9 @@ module.exports = function (RED) {
         // Config node state
         node.host = config.host;
         node.port = config.port;
+        node.clientid = config.clientid || "recamera";
+        node.username = config.username;
+        node.password = config.password;
         node.autoConnect = config.autoConnect || true;
         node.connected = false;
         node.connecting = false;
@@ -73,9 +76,23 @@ module.exports = function (RED) {
                     }, 1)
                 }
             }
+            let dependencies = [];
+            RED.nodes.eachNode(function (n) {
+                if (n.wires != undefined) {
+                    n.wires.forEach(wires => {
+                        if (wires.includes(Node.id) && !dependencies.includes(n.id) && n.client == node.id) {
+                            dependencies.push(n.id);
+                        }
+                    });
+                }
+            });
+
+            //console.log("dependencies", dependencies);
+
             const create = {
                 "type": Node.type,
                 "config": Node.config,
+                "dependencies": dependencies,
             }
             node.request(Node.id, "create", create);
         };
@@ -131,7 +148,7 @@ module.exports = function (RED) {
                                 }
                             }
                         }
-                        const topic = "sscma/" + node.api + "/recamera/node/out/+"
+                        const topic = "sscma/" + node.api + "/" + node.clientid + "/node/out/+"
                         node.client.subscribe(topic, function (err) {
                             if (err) { console.log(err); }
                         });
@@ -222,7 +239,7 @@ module.exports = function (RED) {
         }
 
         node.request = function (id, cmd, data, done) {
-            
+            //console.log("request", id, cmd, data);
             const topic = "sscma/" + node.api + "/recamera/node/in/" + id;
             const msg = {
                 name: cmd,

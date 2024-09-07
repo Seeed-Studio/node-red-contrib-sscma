@@ -15,6 +15,7 @@ module.exports = function (RED) {
         }
 
         node.receive = function (msg) {
+            //console.log(msg);
             if (msg.type === "sscma") {
                 node.send(msg)
             }
