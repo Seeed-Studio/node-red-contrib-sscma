@@ -1,38 +1,45 @@
-module.exports = function (RED) {
-    var connections = [];
+module.exports = function(RED) {
+   
     function PreviewNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
-        node.on('input', function (msg) {
-            if (connections.length > 0) {
-                connections.forEach(connection => {
-                    connection.res.write(`data: ${JSON.stringify(msg)}\n\n`);
-                });
-            }
+        this.active     = (config.active === null || typeof config.active === "undefined") || config.active;
+        
+        function handleError(err, msg, statusText) {
+            node.status({ fill:"red", shape:"dot", text:statusText });
+            node.error(err, msg);
+        }
+        node.on("input", function(msg) {
+            if (this.active !== true) { return; }
+            RED.comms.publish("image", { id:node.id, data:msg.payload.data });
         });
 
-        node.on('close', function () {
-            //connections = [];
-        });
-
-        RED.httpAdmin.get(`/preview-data/${node.id}`, function (req, res) {
-            res.setHeader('Content-Type', 'text/event-stream');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Connection', 'keep-alive');
-
-            const connection = { req, res };
-            connections.push(connection);
-            req.on('close', () => {
-                connections = connections.filter(c => c !== connection);
-                res.end();
-            });
-        });
-
-        console.log(`Serving preview at http://localhost:1880/preview/${node.id}`);
-        RED.httpAdmin.get(`/preview/${node.id}`, function (req, res) {
-            res.sendFile(__dirname + '/public/index.html');
+        node.on("close", function() {
+            RED.comms.publish("image", { id:this.id });
+            node.status({});
         });
     }
     RED.nodes.registerType("preview", PreviewNode);
-
-}
+    
+    // Via the button on the node (in the FLOW EDITOR), the image pushing can be enabled or disabled
+    RED.httpAdmin.post("/image-output/:id/:state", RED.auth.needsPermission("image-output.write"), function(req,res) {
+        var state = req.params.state;
+        var node = RED.nodes.getNode(req.params.id);
+        
+        if(node === null || typeof node === "undefined") {
+            res.sendStatus(404);
+            return;  
+        }
+        if (state === "enable") {
+            node.active = true;
+            res.send('activated');
+        }
+        else if (state === "disable") {
+            node.active = false;
+            res.send('deactivated');
+        }
+        else {
+            res.sendStatus(404);
+        }
+    });
+};
