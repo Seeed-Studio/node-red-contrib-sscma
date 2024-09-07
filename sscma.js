@@ -160,10 +160,10 @@ module.exports = function (RED) {
                         if (node.users[id]) {
                             try {
                                 const payload = JSON.parse(message)
-                                if (payload.code != 0) {
-                                    node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
-                                } else {
+                                if (payload.code == 0) {
                                     node.users[id].status({ fill: "green", shape: "ring", text: "node-red:common.status.connected" });
+                                } else {
+                                    node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
                                 }
                                 var msg = {
                                     type: "sscma",
