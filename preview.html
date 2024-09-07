@@ -1,7 +1,7 @@
 <script type="text/html" data-template-name="preview">
     <div class="form-row">
-        <label for="node-input-name"><i class="icon-tag"></i> 名称</label>
-        <input type="text" id="node-input-name" placeholder="节点名称">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <input type="text" id="node-input-name">
     </div>
 </script>
 
@@ -20,7 +20,7 @@
             return this.name ? "node_label_italic" : "";
         },
         defaults: {
-            name: { value: "" }
+            name: { value: this.name || "preview" }
         },
         oneditprepare: function() {
         }

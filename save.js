@@ -13,7 +13,6 @@ module.exports = function (RED) {
         }
 
         node.receive = function (msg) {
-            console.log(node.type, msg);
             node.send(msg);
         }
 

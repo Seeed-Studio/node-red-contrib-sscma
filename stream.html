@@ -1,7 +1,7 @@
 <script type="text/html" data-template-name="stream">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
-        <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+        <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
         <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
@@ -15,11 +15,11 @@
     </div>
     <div class="form-row">
         <label for="node-input-uri"><i class="fa fa-globe"></i> port</label>
-        <input type="text" id="node-input-port">
+        <input type="number" id="node-input-port" min="1" max="65535">
     </div>
     <div class="form-row">
         <label for="node-input-session"><i class="fa fa-globe"></i> session</label>
-        <input type="text" id="node-input-session">
+        <input type="text" id="node-input-session" maxlength="8">
     </div>
 </script>
 
@@ -28,7 +28,7 @@
         category: 'sscma',
         color: '#7AA6E0',
         defaults: {
-            name: { value: "" },
+            name: { value: this.name || "stream" },
             protocol: { value: 0 },
             port: { value: 8554 },
             session: { value: "live" },

@@ -1,7 +1,7 @@
 <script type="text/html" data-template-name="model">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
-        <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
+        <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
         <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
@@ -44,6 +44,14 @@
         icon: "font-awesome/fa-cube",
         label: function () {
             return this.name || "model";
+        }
+    });
+    RED.events.on('nodes:add', function (node) {
+
+        const existingNodes = RED.nodes.filterNodes({type: "model"});
+        if (existingNodes.length > 1) {
+            RED.notify("This node can only be instantiated once.", "error");
+            RED.nodes.remove(node.id);
         }
     });
 </script>

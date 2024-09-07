@@ -1,19 +1,33 @@
 <script type="text/html" data-template-name="camera">
     <div class="form-row">
-        <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
-        <input type="text" id="node-input-client">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-width"><i class="fa fa-file"></i>width</label>
-        <input type="text" id="node-input-width">
+        <div class="form-row">
+            <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
+            <input type="text" id="node-input-client">
+        </div>
+        <label for="node-input-resolution">
+            <i class="fa fa-arrows-alt"></i> Resolution
+        </label>
+        <select id="node-input-resolution" value="1080p">
+            <option value="1080p">1080p (1920x1080)</option>
+            <option value="720p">720p (1280x720)</option>
+        </select>
     </div>
     <div class="form-row">
-        <label for="node-input-height"><i class="fa fa-file"></i>height</label>
-        <input type="text" id="node-input-height">
+        <label for="node-input-width">
+            <i class="fa fa-arrows-h"></i> Width (px)
+        </label>
+        <input type="number" id="node-input-width" readonly>
     </div>
+    
     <div class="form-row">
-        <label for="node-input-fps"><i class="fa fa-file"></i>fps</label>
-        <input type="text" id="node-input-fps">
+        <label for="node-input-height">
+            <i class="fa fa-arrows-v"></i> Height (px)
+        </label>
+        <input type="number" id="node-input-height" readonly>
     </div>
 </script>
 
@@ -22,6 +36,7 @@
         category: 'sscma',
         color: '#9464C4',
         defaults: {
+            resolution: { value: "", required: true },
             width: { value: "1920" },
             height: { value: "1080" },
             fps: { value: "30" },
@@ -32,7 +47,31 @@
         icon: "font-awesome/fa-camera",
         label: function () {
             return this.name || "camera";
+        },
+        oneditprepare: function () {
+            const resolutionSelect = $("#node-input-resolution");
+            const widthInput = $("#node-input-width");
+            const heightInput = $("#node-input-height");
+            // Handle resolution change
+            resolutionSelect.on('change', function () {
+                if (this.value === '1080p') {
+                    widthInput.val(1920);
+                    heightInput.val(1080);
+                } else if (this.value === '720p') {
+                    widthInput.val(1280);
+                    heightInput.val(720);
+                } else {
+                    widthInput.val('');
+                    heightInput.val('');
+                }
+            });
         }
-        
+    });
+    RED.events.on('nodes:add', function (node) {
+        const existingNodes = RED.nodes.filterNodes({type: "camera"});
+        if (existingNodes.length > 1) {
+            RED.notify("This node can only be instantiated once.", "error");
+            RED.nodes.remove(node.id);
+        }
     });
 </script>

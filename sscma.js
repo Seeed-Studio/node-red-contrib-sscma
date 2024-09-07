@@ -239,7 +239,6 @@ module.exports = function (RED) {
         }
 
         node.request = function (id, cmd, data, done) {
-            //console.log("request", id, cmd, data);
             const topic = "sscma/" + node.api + "/recamera/node/in/" + id;
             const msg = {
                 name: cmd,
@@ -249,6 +248,7 @@ module.exports = function (RED) {
             const options = {
                 qos: 0
             };
+            // console.log("Sending request: " + topic + " " + JSON.stringify(msg));
             node.client.publish(topic, JSON.stringify(msg), options, function (err) {
                 if (err) {
                     console.log("Error sending request: " + err);

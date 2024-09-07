@@ -12,7 +12,7 @@ module.exports = function (RED) {
         }
 
         node.receive  = function(msg) {
-           console.log(node.type, msg);
+   
         }
 
         if (node.client) {
