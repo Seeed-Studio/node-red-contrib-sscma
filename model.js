@@ -6,11 +6,13 @@ module.exports = function (RED) {
         node.uri = config.uri;
         node.tiou = config.tiou;
         node.tscore = config.tscore;
+        node.trace = config.trace;
         node.debug = config.debug;
         node.config = {
             uri: node.uri,
             tiou: parseFloat(node.tiou),
             tscore: parseFloat(node.tscore),
+            trace: node.trace,
             debug: node.debug
         }
         node.receive = function (msg) {

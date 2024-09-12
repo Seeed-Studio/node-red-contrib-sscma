@@ -175,6 +175,7 @@
         }
 
         var render = function (id, data, node) {
+
             let i = new Image();
             let $img = document.getElementById("image-output-img-" + id)
             let $group = document.getElementById("image-output-group-" + id)
@@ -184,7 +185,7 @@
                 const img = document.createElementNS("http://www.w3.org/2000/svg", 'image')
                 img.setAttribute('id', "image-output-img-" + id)
                 img.setAttribute('x', '0')
-                img.setAttribute('y', '45')
+                img.setAttribute('y', '50')
                 img.setAttribute('width', node.width || DEFAULT_IMAGE_WIDTH)
                 img.addEventListener("click", function () { remove(id) }, { once: true })
                 $container.insertBefore(img, $container.lastChild.nextSibling)
@@ -196,8 +197,8 @@
                 if (!$container) { return }
                 const group = document.createElementNS("http://www.w3.org/2000/svg", 'g')
                 group.setAttribute('id', "image-output-group-" + id)
+                group.setAttribute('transform', "translate(0, 50)")
                 $container.insertBefore(group, $container.lastChild.nextSibling)
-                console.log(group)
                 $group = group
             }
 
@@ -221,7 +222,7 @@
                             tarStr = tar.toString();
                             const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
                             rect.setAttribute('x', x - w / 2)
-                            rect.setAttribute('y', y + h / 2)
+                            rect.setAttribute('y', y - h / 2)
                             rect.setAttribute('width', w)
                             rect.setAttribute('height', h)
                             rect.setAttribute('fill', "none")
@@ -232,7 +233,7 @@
                             $group.appendChild(rect)
                             const rect_text = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
                             rect_text.setAttribute('x', x - w / 2)
-                            rect_text.setAttribute('y', y + h / 2 - 12)
+                            rect_text.setAttribute('y', y - h / 2 - 12)
                             rect_text.setAttribute('width', w)
                             rect_text.setAttribute('height', 12)
                             rect.setAttribute('stroke', color)
@@ -241,10 +242,16 @@
                             $group.appendChild(rect_text)
                             const text = document.createElementNS("http://www.w3.org/2000/svg", 'text')
                             text.setAttribute('x', x - w / 2 + 5)
-                            text.setAttribute('y', y + h / 2 - 2)
-                            text.setAttribute('font-size', '12');  // 字体大小
+                            text.setAttribute('y', y - h / 2 - 2)
+                            text.setAttribute('font-size', '12');
+                            text.setAttribute('fill', 'white');
+                            text.setAttribute('stroke', 'white');
                             text.setAttribute('font-family', 'Arial');
-                            text.textContent = `${tarStr}: ${score}`; 
+                            if (data?.tracks) {
+                                text.textContent = `#${data.tracks[i]}:${tarStr}: ${score}`
+                            } else {
+                                text.textContent = `${tarStr}: ${score}`;
+                            }
                             $group.appendChild(text)
                         }
                     }
@@ -262,7 +269,6 @@
                 render(data.id, data.data, RED.nodes.node(data.id))
             }
             else {
-                console.log(data)
                 remove(data.id);
             }
         })
@@ -270,8 +276,8 @@
 </script>
 
 <script type="text/html" data-template-name="preview">
-        <div class="form-row">
-            <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-            <input type="text" id="node-input-name" placeholder="Name">
-        </div>
-    </script>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>

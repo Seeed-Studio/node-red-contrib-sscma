@@ -20,6 +20,10 @@
         <input type="number"  id="node-input-tiou" min="0.00" max="100.00", step="0.01">
     </div>
     <div class="form-row">
+        <label for="node-input-trace"><i class="fa fa-tag"></i> Trace</label>
+        <input type="checkbox" id="node-input-trace">
+    </div>
+    <div class="form-row">
         <label for="node-input-debug"><i class="fa fa-tag"></i> Debug</label>
         <input type="checkbox" id="node-input-debug">
     </div>
@@ -36,8 +40,9 @@
             uri: { value: "" },
             tscore: { value: 0.45 },
             tiou: { value: 0.25 },
-            client: { type: "sscma", required: true, label: RED._("sscma") },
-            debug: { value: false }
+            trace: { value: false },
+            debug: { value: false },
+            client: { type: "sscma", required: true, label: RED._("sscma") }
         },
         inputs: 1,
         outputs: 1,
