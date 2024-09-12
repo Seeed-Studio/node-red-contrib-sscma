@@ -1,6 +1,6 @@
 {
     "name": "node-red-contrib-sscma",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Node-RED nodes for SSCMA",
     "repository": {
         "type": "git",
@@ -9,13 +9,16 @@
     "node-red": {
         "version": ">=3.0.0",
         "nodes": {
-            "camera": "camera.js",
-            "model": "model.js",
-            "save": "save.js",
-            "stream": "stream.js",
-            "preview": "preview.js",
-            "sscma": "sscma.js"
+            "camera": "nodes/camera.js",
+            "model": "nodes/model.js",
+            "save": "nodes/save.js",
+            "stream": "nodes/stream.js",
+            "preview": "nodes/preview.js",
+            "sscma": "nodes/sscma.js"
         }
+    },
+    "dependencies": {
+        "mqtt": "^4.2.6"
     },
     "license": "Apache-2.0",
     "keywords": [
@@ -23,9 +26,7 @@
         "sscma",
         "vision ai"
     ],
-    "dependencies":{
-        "node-red": ">=3.0.0",
-        "mqtt": ">=4.3.7"
+    "engines": {
+        "node": ">=14"
     }
-
 }
