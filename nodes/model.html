@@ -4,7 +4,7 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
+        <label for="node-input-client"><i class="fa fa-globe"></i><span> Client</span></label>
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
@@ -12,22 +12,31 @@
         <input type="text" id="node-input-uri">
     </div>
     <div class="form-row">
-        <label for="node-input-tscore"><i class="fa fa-file"></i> Confidence</label>
-        <input type="number"  id="node-input-tscore" min="0.00" max="100.00", step="0.01">
+        <label for="node-input-tscore"><i class="fa fa-sliders"></i> Confidence</label>
+        <input type="range" id="node-input-tscore" min="0.01" max="1.00" step="0.01" value="45">
+        <span id="tscore-value"></span>
     </div>
     <div class="form-row">
-        <label for="node-input-tiou"><i class="fa fa-file"></i> IOU</label>
-        <input type="number"  id="node-input-tiou" min="0.00" max="100.00", step="0.01">
+        <label for="node-input-tiou"><i class="fa fa-sliders"></i> IOU</label>
+        <input type="range" id="node-input-tiou" min="0.01" max="1.00" step="0.01" value="25">
+        <span id="tiou-value"></span>
     </div>
     <div class="form-row">
-        <label for="node-input-trace"><i class="fa fa-tag"></i> Trace</label>
+        <label for="node-input-trace"><i class="fa fa-toggle-on"></i> Trace</label>
         <input type="checkbox" id="node-input-trace">
     </div>
     <div class="form-row">
-        <label for="node-input-debug"><i class="fa fa-tag"></i> Debug</label>
+        <label for="node-input-debug"><i class="fa fa-toggle-on"></i> Debug</label>
         <input type="checkbox" id="node-input-debug">
     </div>
-
+    <div class="form-row">
+        <label for="node-input-counting"><i class="fa fa-toggle-on"></i> Counting</label>
+        <input type="checkbox" id="node-input-counting">
+    </div>
+    <div class="form-row" id="splitter-row">
+        <label for="node-input-line"><i class="fa fa-arrows-alt"></i> Line</label>
+        <canvas id="splitter-canvas" width="100" height="100" style="border: 1px solid black;"></canvas>
+        <input type="hidden" id="node-input-splitter">
     </div>
 </script>
 
@@ -42,6 +51,8 @@
             tiou: { value: 0.25 },
             trace: { value: false },
             debug: { value: false },
+            counting: { value: false },
+            splitter: { value: [0, 0, 0, 0] },  // Array for x1, y1, x2, y2
             client: { type: "sscma", required: true, label: RED._("sscma") }
         },
         inputs: 1,
@@ -49,14 +60,134 @@
         icon: "font-awesome/fa-cube",
         label: function () {
             return this.name || "model";
-        }
-    });
-    RED.events.on('nodes:add', function (node) {
+        },
+        oneditprepare: function () {
+            var node = this;
+            var traceInput = document.getElementById('node-input-trace');
+            var countingInput = document.getElementById('node-input-counting');
+            var splitterCanvas = document.getElementById('splitter-canvas');
+            var tscoreInput = document.getElementById('node-input-tscore');
+            var tiouInput = document.getElementById('node-input-tiou');
+            var tscoreValue = document.getElementById('tscore-value');
+            var tiouValue = document.getElementById('tiou-value');
+            var splitterInput = document.getElementById('node-input-splitter');  // Hidden input for the array
 
-        const existingNodes = RED.nodes.filterNodes({type: "model"});
-        if (existingNodes.length > 1) {
-            RED.notify("This node can only be instantiated once.", "error");
-            RED.nodes.remove(node.id);
+            var isDrawing = false;
+            var startX = 0, startY = 0;
+
+            function updateCountingState() {
+                countingInput.disabled = !traceInput.checked;
+                if (!traceInput.checked) {
+                    countingInput.checked = false;
+                }
+                updateCanvas();
+            }
+
+            function updateSliderValue(input, display) {
+                display.innerText = input.value;
+            }
+
+            function updateCanvas() {
+                if (!countingInput.checked) {
+                    document.getElementById('splitter-row').style.display = 'none';
+                } else {
+                    document.getElementById('splitter-row').style.display = 'block';
+                    let line =splitterInput.value.split(',').map(Number);
+                    var canvasWidth = splitterCanvas.width;
+                    var canvasHeight = splitterCanvas.height;
+                    var ctx = splitterCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    ctx.beginPath();
+                    ctx.moveTo(line[0], line[1]);
+                    ctx.lineTo(line[2], line[3]);
+                    ctx.stroke();
+                }
+            }
+
+            function extendLineToEdges(x1, y1, x2, y2, canvasWidth, canvasHeight) {
+                var dx = x2 - x1;
+                var dy = y2 - y1;
+
+                if (dx === 0) {
+                    return { x1: x1, y1: 0, x2: x2, y2: canvasHeight };
+                } else if (dy === 0) {
+                    return { x1: 0, y1: y1, x2: canvasWidth, y2: y2 };
+                }
+
+                var slope = dy / dx;
+                var intercept = y1 - slope * x1;
+
+                var xStart = 0;
+                var yStart = intercept;
+
+                if (yStart < 0 || yStart > canvasHeight) {
+                    yStart = yStart < 0 ? 0 : canvasHeight;
+                    xStart = (yStart - intercept) / slope;
+                }
+
+                var xEnd = canvasWidth;
+                var yEnd = slope * xEnd + intercept;
+
+                if (yEnd < 0 || yEnd > canvasHeight) {
+                    yEnd = yEnd < 0 ? 0 : canvasHeight;
+                    xEnd = (yEnd - intercept) / slope;
+                }
+
+                return { x1: parseInt(xStart), y1: parseInt(yStart), x2: parseInt(xEnd), y2: parseInt(yEnd) };
+            }
+
+            splitterCanvas.addEventListener('mousedown', function (e) {
+                isDrawing = true;
+                var rect = splitterCanvas.getBoundingClientRect();
+                startX = e.clientX - rect.left;
+                startY = e.clientY - rect.top;
+                splitter = [startX, startY, 0, 0];  // Store start coordinates in the array
+            });
+
+            splitterCanvas.addEventListener('mouseup', function (e) {
+                if (isDrawing) {
+                    isDrawing = false;
+                    var rect = splitterCanvas.getBoundingClientRect();
+                    var endX = e.clientX - rect.left;
+                    var endY = e.clientY - rect.top;
+                    splitter[2] = endX;  // Update end coordinates in the array
+                    splitter[3] = endY;
+
+                    var canvasWidth = splitterCanvas.width;
+                    var canvasHeight = splitterCanvas.height;
+                    var extendedLine = extendLineToEdges(startX, startY, endX, endY, canvasWidth, canvasHeight);
+
+                    splitter = [+extendedLine.x1, +extendedLine.y1, +extendedLine.x2, +extendedLine.y2];  // Update array with extended coordinates
+
+                    // Reflect array in hidden input
+                    splitterInput.value = splitter;
+
+                    var ctx = splitterCanvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    ctx.beginPath();
+                    ctx.moveTo(extendedLine.x1, extendedLine.y1);
+                    ctx.lineTo(extendedLine.x2, extendedLine.y2);
+                    ctx.stroke();
+                }
+            });
+
+            updateCanvas();
+            
+            updateCountingState();
+
+            traceInput.addEventListener('change', updateCountingState);
+
+            countingInput.addEventListener('change', function () {
+                updateCanvas();
+            });
+
+            tscoreInput.addEventListener('input', function () {
+                updateSliderValue(tscoreInput, tscoreValue);
+            });
+
+            tiouInput.addEventListener('input', function () {
+                updateSliderValue(tiouInput, tiouValue);
+            });
         }
     });
 </script>

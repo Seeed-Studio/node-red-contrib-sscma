@@ -8,13 +8,20 @@ module.exports = function (RED) {
         node.tscore = config.tscore;
         node.trace = config.trace;
         node.debug = config.debug;
+        node.counting = config.counting;
+        node.splitter = config.splitter;
+        console.log(node.splitter)
         node.config = {
             uri: node.uri,
             tiou: parseFloat(node.tiou),
             tscore: parseFloat(node.tscore),
             trace: node.trace,
-            debug: node.debug
+            debug: node.debug,
+            counting: config.counting,
+            splitter: node.splitter.split(',').map(Number)
         }
+
+        console.log(node.config)
         node.receive = function (msg) {
             if (msg.type === "sscma") {
                 node.send(msg)
