@@ -4,22 +4,30 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
+        <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
-        <label for="node-input-protocol"><i class="fa fa-globe"></i> protocol</label>
+        <label for="node-input-protocol"><i class="fa fa-at"></i> Protocol</label>
         <select id="node-input-protocol" style="width: 70%;">
-            <option value="0">rtsp</option>
+            <option value="0">RTSP</option>
         </select>
     </div>
     <div class="form-row">
-        <label for="node-input-uri"><i class="fa fa-globe"></i> port</label>
+        <label for="node-input-uri"><i class="fa fa-plug"></i> Port</label>
         <input type="number" id="node-input-port" min="1" max="65535">
     </div>
     <div class="form-row">
-        <label for="node-input-session"><i class="fa fa-globe"></i> session</label>
+        <label for="node-input-session"><i class="fa fa-comments"></i> Session</label>
         <input type="text" id="node-input-session" maxlength="8">
+    </div>
+    <div class="form-row">
+        <label for="node-input-username"><i class="fa fa-user"></i> Username</label>
+        <input type="text" id="node-input-username" maxlength="32" required>
+    </div>
+    <div class="form-row">
+        <label for="node-input-password"><i class="fa fa-lock"></i> Password</label>
+        <input type="password" id="node-input-password" maxlength="32" required>
     </div>
 </script>
 
@@ -30,8 +38,10 @@
         defaults: {
             name: { value: this.name || "stream" },
             protocol: { value: 0 },
-            port: { value: 8554 },
+            port: { value: 554 },
             session: { value: "live" },
+            username: { value: "admin", required: true },
+            password: { value: "admin", required: true },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 1,

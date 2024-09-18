@@ -6,7 +6,9 @@ module.exports = function (RED) {
         node.config = {
             protocol: config.protocol,
             port: +config.port,
-            session: config.session
+            session: config.session,
+            username: config.username,
+            password: config.password
         }
 
         node.receive  = function(msg) {
