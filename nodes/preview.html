@@ -175,7 +175,7 @@
         }
 
         var render = function (id, data, node) {
-
+            //console.log(data)
             let i = new Image();
             let $img = document.getElementById("image-output-img-" + id)
             let $group = document.getElementById("image-output-group-" + id)
@@ -186,7 +186,8 @@
                 img.setAttribute('id', "image-output-img-" + id)
                 img.setAttribute('x', '0')
                 img.setAttribute('y', '50')
-                img.setAttribute('width', node.width || DEFAULT_IMAGE_WIDTH)
+                img.setAttribute('width', data.resolution[0])
+                img.setAttribute('height', data.resolution[1])
                 img.addEventListener("click", function () { remove(id) }, { once: true })
                 $container.insertBefore(img, $container.lastChild.nextSibling)
                 $img = img
@@ -203,9 +204,29 @@
             }
 
             i.onload = function () {
+                
                 $img.setAttribute('href', "data:image/jpeg;base64," + data.image);
                 //remove all the children 
                 $group.innerHTML = "";
+                if (data?.lines) {
+                    for (let i = 0; i < data.lines.length; i += 1) {
+                        const line = data.lines;
+                        const x1 = line[0] * 0.01 * data.resolution[0];
+                        const y1 = line[1] * 0.01 * data.resolution[1];
+                        const x2 = line[2] * 0.01 * data.resolution[0];
+                        const y2 = line[3] * 0.01 * data.resolution[1];
+                        const color = COLORS[i % COLORS.length];
+                        const lineElement = document.createElementNS("http://www.w3.org/2000/svg", 'line')
+                        lineElement.setAttribute('x1', x1)
+                        lineElement.setAttribute('y1', y1)
+                        lineElement.setAttribute('x2', x2)
+                        lineElement.setAttribute('y2', y2)
+                        lineElement.setAttribute('stroke', color)
+                        lineElement.setAttribute('stroke-width', '2')
+                        $group.appendChild(lineElement)
+                    }
+
+                }
                 if (data?.boxes) {
                     const boxes = data.boxes;
                     for (let i = 0; i < boxes.length; i += 1) {
