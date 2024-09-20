@@ -1,3 +1,59 @@
+<style>
+    /* CSS Style Optimization */
+    #node-input-classes-container {
+        margin-top: 5px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+    }
+
+    .node-input-class-wrapper {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        /* Add space between inputs */
+    }
+
+    .node-input-class-number {
+        width: 20px;
+        /* Width for numbering */
+        text-align: center;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .node-input-class {
+        flex-grow: 1;
+        padding: 5px 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        transition: border-color 0.3s;
+    }
+
+    .node-input-class:focus {
+        border-color: #2980b9;
+        outline: none;
+    }
+
+    .node-input-class:last-of-type {
+        margin-bottom: 0;
+    }
+
+    #node-input-classes-container-title {
+        margin-bottom: 10px;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    #node-input-classes-container-hint {
+        margin-top: 5px;
+        font-size: 12px;
+        color: #777;
+    }
+</style>
+
 <script type="text/html" data-template-name="model">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
@@ -35,8 +91,18 @@
     </div>
     <div class="form-row" id="splitter-row">
         <label for="node-input-line"><i class="fa fa-arrows-alt"></i> Line</label>
-        <canvas id="splitter-canvas" width="100" height="100" style="border: 1px solid black;"></canvas>
+        <canvas id="splitter-canvas" width="100" height="100" style="border: 2px solid black;"></canvas>
         <input type="hidden" id="node-input-splitter">
+    </div>
+    <!-- Dynamic class inputs with numbering -->
+    <div class="form-row">
+        <label for="node-input-classes"><i class="fa fa-list"></i> Classes</label>
+        <div id="node-input-classes-container">
+            <div id="node-input-classes-container-title">Class Labels</div>
+            <div id="node-input-classes-container-hint">Enter class labels in order.</div>
+            <!-- Container for dynamically added inputs -->
+        </div>
+        <input type="hidden" id="node-input-classes" name="classes">
     </div>
 </script>
 
@@ -46,12 +112,13 @@
         color: '#2980b9',
         defaults: {
             name: { value: "" },
-            uri: { value: "" },
+            uri: { value: "", required: true },
             tscore: { value: 0.45 },
             tiou: { value: 0.25 },
             trace: { value: false },
             debug: { value: false },
             counting: { value: false },
+            classes: { value: [] },
             splitter: { value: [0, 0, 0, 0] },  // Array for x1, y1, x2, y2
             client: { type: "sscma", required: true, label: RED._("sscma") }
         },
@@ -71,10 +138,16 @@
             var tscoreValue = document.getElementById('tscore-value');
             var tiouValue = document.getElementById('tiou-value');
             var splitterInput = document.getElementById('node-input-splitter');  // Hidden input for the array
+            var classesContainer = document.getElementById('node-input-classes-container');
+            var classesInput = document.getElementById('node-input-classes');
 
             var isDrawing = false;
             var startX = 0, startY = 0;
 
+            tscoreValue.innerText = tscoreInput.value;
+            tiouValue.innerText = tiouInput.value;
+
+            // Update counting checkbox state based on trace checkbox
             function updateCountingState() {
                 countingInput.disabled = !traceInput.checked;
                 if (!traceInput.checked) {
@@ -83,16 +156,18 @@
                 updateCanvas();
             }
 
+            // Update range slider values
             function updateSliderValue(input, display) {
                 display.innerText = input.value;
             }
 
+            // Update canvas for line drawing
             function updateCanvas() {
                 if (!countingInput.checked) {
                     document.getElementById('splitter-row').style.display = 'none';
                 } else {
                     document.getElementById('splitter-row').style.display = 'block';
-                    let line =splitterInput.value.split(',').map(Number);
+                    let line = splitterInput.value.split(',').map(Number);
                     var canvasWidth = splitterCanvas.width;
                     var canvasHeight = splitterCanvas.height;
                     var ctx = splitterCanvas.getContext('2d');
@@ -104,6 +179,7 @@
                 }
             }
 
+            // Extend line to canvas edges
             function extendLineToEdges(x1, y1, x2, y2, canvasWidth, canvasHeight) {
                 var dx = x2 - x1;
                 var dy = y2 - y1;
@@ -172,7 +248,7 @@
             });
 
             updateCanvas();
-            
+
             updateCountingState();
 
             traceInput.addEventListener('change', updateCountingState);
@@ -188,6 +264,53 @@
             tiouInput.addEventListener('input', function () {
                 updateSliderValue(tiouInput, tiouValue);
             });
+
+            // Create class input with numbering
+            function createClassInput(number, value) {
+                var wrapper = document.createElement('div');
+                wrapper.className = 'node-input-class-wrapper';
+
+                var numberLabel = document.createElement('div');
+                numberLabel.className = 'node-input-class-number';
+                numberLabel.textContent = number;
+
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'Enter a class label';
+                input.className = 'node-input-class';
+                input.addEventListener('input', handleClassInput);
+
+                if (value) {
+                    input.value = value;
+                }
+
+                wrapper.appendChild(numberLabel);
+                wrapper.appendChild(input);
+                classesContainer.appendChild(wrapper);
+                return input;
+            }
+
+            function handleClassInput(event) {
+                var inputs = classesContainer.querySelectorAll('.node-input-class');
+                var values = Array.from(inputs).map(function (input) {
+                    return input.value.trim();
+                }).filter(function (value) {
+                    return value !== "";
+                });
+
+                classesInput.value = JSON.stringify(values);
+
+                if (event.target === inputs[inputs.length - 1] && event.target.value.trim() !== "") {
+                    createClassInput(inputs.length + 1); // Create a new input with updated numbering
+                }
+            }
+
+            var classes = JSON.parse(node.classes || '[]');
+            for (var i = 0; i < classes.length; i++) {
+                createClassInput(i, classes[i]);
+            }
+            createClassInput(classes.length);
+
         }
     });
 </script>

@@ -3,25 +3,16 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         node = this;
         node.client = RED.nodes.getNode(config.client);
-        node.uri = config.uri;
-        node.tiou = config.tiou;
-        node.tscore = config.tscore;
-        node.trace = config.trace;
-        node.debug = config.debug;
-        node.counting = config.counting;
-        node.splitter = config.splitter;
-        console.log(node.splitter)
         node.config = {
-            uri: node.uri,
-            tiou: parseFloat(node.tiou),
-            tscore: parseFloat(node.tscore),
-            trace: node.trace,
-            debug: node.debug,
+            uri: config.uri,
+            tiou: parseFloat(config.tiou),
+            tscore: parseFloat(config.tscore),
+            trace: config.trace,
+            debug: config.debug,
             counting: config.counting,
-            splitter: node.splitter.split(',').map(Number)
+            splitter: config.splitter,
+            classes: config.classes
         }
-
-        console.log(node.config)
         node.receive = function (msg) {
             if (msg.type === "sscma") {
                 node.send(msg)
