@@ -398,16 +398,19 @@
             })
 
             var uploadFile = document.getElementById('upload-file');
-            var api = `http://${host}/api/deviceMgr/uploadModel`;
             if (uploadFile.files.length > 0) {
                 var file = uploadFile.files[0];
-                var info = `{model_id:"0",classes:${node.classes}}`;
+                var info = {
+                    model_id: "0",
+                    model_name: file.name,
+                    classes: node.classes.split(',').map((c) => c.trim()),
+                }
 
                 const formData = new FormData();
                 formData.append('model_file', file);
-                formData.append('model_info', info);
+                formData.append('model_info', JSON.stringify(info));
 
-                fetch(api, {
+                fetch(`http://${host}/api/deviceMgr/uploadModel`, {
                     method: 'POST',
                     body: formData
                 })
