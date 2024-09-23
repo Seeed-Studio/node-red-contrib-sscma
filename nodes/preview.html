@@ -306,6 +306,31 @@
                         $group.appendChild(text);
                     }
                 }
+                //     if (data?.counts) {
+                //     const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+                //     const rectWidth = data.resolution[0];
+                //     const rectHeight = data.resolution[1] / 16;
+                //     const countA = data.counts[0];
+                //     const countB = data.counts[1];
+                //     const countAB = data.counts[2];
+                //     const countBA = data.counts[3];
+                //     rect.setAttribute('x', 0);
+                //     rect.setAttribute('y', 0);
+                //     rect.setAttribute('width', rectWidth);
+                //     rect.setAttribute('height', rectHeight);
+                //     rect.setAttribute('fill', COLORS[0]);
+                //     rect.setAttribute('fill-opacity', 0.3);
+                //     const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+                //     text.setAttribute('x', 0);
+                //     text.setAttribute('y', data.resolution[1] / 24);
+                //     text.setAttribute('font-size', data.resolution[1] / 24);
+                //     text.setAttribute('font-weight', 'bold');
+                //     text.setAttribute('font-family', 'arial');
+                //     text.setAttribute('fill', '#ffffff');
+                //     text.textContent = `A: ${countA} B: ${countB} A->B: ${countAB} B->A: ${countBA}`
+                //     $group.appendChild(rect);
+                //     $group.appendChild(text);
+                // }
             }
             i.src = "data:image/jpeg;base64," + data.image;
         }
