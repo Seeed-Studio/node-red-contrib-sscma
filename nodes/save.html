@@ -58,19 +58,20 @@
     <input type="text" id="node-input-client">
 </div>
 <div class="form-row">
-    <label for="node-input-storage"><i class="fa fa-file"></i>Storage</label>
+    <label for="node-input-storage"><i class="fa fa-file"></i> Storage</label>
     <select id="node-input-storage">
         <option value="local">Local</option>
         <option value="external">External</option>
     </select>
 </div>
-<!-- <div class="form-row">
-    <label for="node-input-duration"><i class="fa fa-hourglass-half"></i> Duration</label>
-    <input type="number" id="node-input-duration" placeholder="Enter duration in seconds">
-    <span> Minutes</span>
-</div> -->
 <div class="form-row">
-    <label for="node-input-slice"><i class="fa fa-clock"></i>Slice</label>
+    <label for="node-input-duration"><i class="fa fa-hourglass-half"></i> Duration</label>
+    <input type="number" id="node-input-duration" min="0" placeholder="Enter 0 for continues or a value in minutes" ,
+        style="width: 65%;">
+    <span> Minutes</span>
+</div>
+<div class="form-row">
+    <label for="node-input-slice"><i class="fa fa-clock-a"></i> Slice</label>
     <select id="node-input-slice">
         <option value="120">2</option>
         <option value="300">5</option>
@@ -78,6 +79,7 @@
     </select>
     <span> Minutes</span>
 </div>
+
 <!-- Trigger Conditions -->
 <!-- <div class="form-row">
     <label><i class="fa fa-cogs"></i> Conditions</label>
@@ -175,7 +177,6 @@
                     logic: row.find('[data-field="logic"]').val()
                 };
             }).get();
-            console.log(this.conditions);
         },
         oneditcancel: function () {
             // Logic to handle cancellation if necessary
