@@ -10,9 +10,10 @@ module.exports = function (RED) {
             trace: config.trace,
             debug: config.debug,
             counting: config.counting,
-            splitter: config.splitter,
-            classes: config.classes
+            splitter: config.splitter.split(',').map((c) => parseInt(c.trim())),
+            classes: config.classes.split(',').map((c) => c.trim()),
         }
+
         node.receive = function (msg) {
             if (msg.type === "sscma") {
                 node.send(msg)

@@ -52,11 +52,63 @@
         font-size: 12px;
         color: #777;
     }
+
+    .node-input-model-container {
+        display: inline-flex;
+    }
+
+    .upload-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        margin-right: 10px;
+        border: none;
+        border-radius: 4px;
+        background-color: #2980b9;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .upload-button:hover {
+        background-color: #1c5980;
+    }
+
+    .upload-button i {
+        margin-right: 5px;
+    }
+
+    .upload-button+input[type="file"] {
+        display: none;
+    }
+
+    .sensecraft-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        margin-right: 10px;
+        border: none;
+        border-radius: 4px;
+        background-color: rgb(140, 192, 31);
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .sensecraft-button:hover {
+        background-color: rgb(120, 172, 21);
+    }
+
+    .sensecraft-button i {
+        margin-right: 5px;
+    }
 </style>
 
 <script type="text/html" data-template-name="model">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <label for="node-input-name"><i class="fa fa-tag"></i>  Label</span></label>
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
@@ -64,17 +116,32 @@
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
+        <label><i class="fa fa-cog"></i> Model </label>
+        <div class="node-input-model-container">
+            <label for="upload-file" class="upload-button">
+                <i class="fa fa-upload"></i> Upload
+            </label>
+            <input type="file" id="upload-file" accept=".cvimodel" style="display:none;"> 
+            <span style="width:25px"></span>
+            <!-- <button id="btn-sensecraft" class="sensecraft-button"><i class="fa fa-globe"></i> SenseCraft</button> -->
+        </div>
+    </div>
+    <div class="form-row" >
+        <label for="node-input-model"><i class="fa fa-file"></i> Name</label>
+        <input type="text" id="node-input-model" readonly>
+    </div>
+    <div class="form-row" style="display:none;">
         <label for="node-input-uri"><i class="fa fa-file"></i> URI</label>
         <input type="text" id="node-input-uri">
     </div>
     <div class="form-row">
         <label for="node-input-tscore"><i class="fa fa-sliders"></i> Confidence</label>
-        <input type="range" id="node-input-tscore" min="0.01" max="1.00" step="0.01" value="45">
+        <input type="range" id="node-input-tscore" min="0.01" max="1.00" step="0.01" value="0.45" style="width: 60%;">
         <span id="tscore-value"></span>
     </div>
     <div class="form-row">
         <label for="node-input-tiou"><i class="fa fa-sliders"></i> IOU</label>
-        <input type="range" id="node-input-tiou" min="0.01" max="1.00" step="0.01" value="25">
+        <input type="range" id="node-input-tiou" min="0.01" max="1.00" step="0.01" value="0.25" style="width: 60%;" >
         <span id="tiou-value"></span>
     </div>
     <div class="form-row">
@@ -112,7 +179,8 @@
         color: '#2980b9',
         defaults: {
             name: { value: "" },
-            uri: { value: "", required: true },
+            uri: { value: "" },
+            model: { value: "" },
             tscore: { value: 0.45 },
             tiou: { value: 0.25 },
             trace: { value: false },
@@ -130,6 +198,8 @@
         },
         oneditprepare: function () {
             var node = this;
+            var uriInput = document.getElementById('node-input-uri');
+            var modelInput = document.getElementById('node-input-model');
             var traceInput = document.getElementById('node-input-trace');
             var countingInput = document.getElementById('node-input-counting');
             var splitterCanvas = document.getElementById('splitter-canvas');
@@ -140,6 +210,13 @@
             var splitterInput = document.getElementById('node-input-splitter');  // Hidden input for the array
             var classesContainer = document.getElementById('node-input-classes-container');
             var classesInput = document.getElementById('node-input-classes');
+            var uploadFile = document.getElementById('upload-file');
+
+            uploadFile.addEventListener('change', function () {
+                var file = this.files[0];
+                uriInput.value = "";
+                modelInput.value = file.name;
+            })
 
             var isDrawing = false;
             var startX = 0, startY = 0;
@@ -283,7 +360,6 @@
                 if (value) {
                     input.value = value;
                 }
-
                 wrapper.appendChild(numberLabel);
                 wrapper.appendChild(input);
                 classesContainer.appendChild(wrapper);
@@ -298,19 +374,55 @@
                     return value !== "";
                 });
 
-                classesInput.value = JSON.stringify(values);
+                classesInput.value = values;
 
                 if (event.target === inputs[inputs.length - 1] && event.target.value.trim() !== "") {
                     createClassInput(inputs.length + 1); // Create a new input with updated numbering
                 }
             }
 
-            var classes = JSON.parse(node.classes || '[]');
+            var classes = classesInput.value.split(',');
             for (var i = 0; i < classes.length; i++) {
                 createClassInput(i, classes[i]);
             }
             createClassInput(classes.length);
 
+        },
+        oneditsave: function () {
+            const node = this;
+            var host = "localhost";
+            RED.nodes.eachConfig(function (c) {
+                if (c.id === node.client) {
+                    host = c.host;
+                }
+            })
+
+            var uploadFile = document.getElementById('upload-file');
+            var api = `http://${host}/api/deviceMgr/uploadModel`;
+            if (uploadFile.files.length > 0) {
+                var file = uploadFile.files[0];
+                var info = `{model_id:"0",classes:${node.classes}}`;
+
+                const formData = new FormData();
+                formData.append('model_file', file);
+                formData.append('model_info', info);
+
+                fetch(api, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(result => console.log(result))
+                    .catch(error => console.log('error', error));
+            }
+        }
+    });
+
+    RED.events.on('nodes:add', function (node) {
+        const existingNodes = RED.nodes.filterNodes({ type: "model" });
+        if (existingNodes.length > 1) {
+            RED.notify("This node can only be instantiated once.", "error");
+            RED.nodes.remove(node.id);
         }
     });
 </script>

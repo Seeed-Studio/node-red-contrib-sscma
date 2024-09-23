@@ -1,13 +1,13 @@
 <script type="text/html" data-template-name="camera">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <div class="form-row">
-            <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
-            <input type="text" id="node-input-client">
-        </div>
+        <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
+        <input type="text" id="node-input-client">
+    </div>
+    <div class="form-row">
         <label for="node-input-resolution">
             <i class="fa fa-arrows-alt"></i> Resolution
         </label>
@@ -68,7 +68,7 @@
         }
     });
     RED.events.on('nodes:add', function (node) {
-        const existingNodes = RED.nodes.filterNodes({type: "camera"});
+        const existingNodes = RED.nodes.filterNodes({ type: "camera" });
         if (existingNodes.length > 1) {
             RED.notify("This node can only be instantiated once.", "error");
             RED.nodes.remove(node.id);

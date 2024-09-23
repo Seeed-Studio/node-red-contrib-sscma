@@ -1,6 +1,6 @@
 <script type="text/html" data-template-name="sscma">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
+        <label for="node-input-name"><i class="fa fa-tag"></i> Label</span></label>
         <input type="text" id="node-input-name" data-i18n="[placeholder]common.label.name">
     </div>
     <div class="form-row">
@@ -55,5 +55,8 @@
         label: function () {
             return "sscma"
         }
+    });
+    RED.events.on('config:add', function (node) {
+       console.log(node)
     });
 </script>

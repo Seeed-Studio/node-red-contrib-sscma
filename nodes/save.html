@@ -1,30 +1,93 @@
-<script type="text/html" data-template-name="save">
-    <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="common.label.name"></span></label>
-        <input type="text" id="node-input-name">
-    </div>
-    <div class="form-row">
-        <label for="node-input-client"><i class="fa fa-globe"></i><span>client</span></label>
-        <input type="text" id="node-input-client">
-    </div>
-    <div class="form-row">
-        <label for="node-input-storage"><i class="fa fa-file"></i>Storage</label>
-        <select id="node-input-storage">
-            <option value="local">Local</option>
-            <option value="external">External</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-slice"><i class="fa fa-file"></i>Slice</label>
-        <select id="node-input-slice">
-            <option value="300">5</option>
-            <option value="600">10</option>
-            <option value="1800">30</option>
-        </select>
-        <span> Minutes</span>
-    </div>
-</script>
+<style>
+    #node-input-conditions-table {
+        width: 100%;
+    }
 
+    #node-input-conditions-table td {
+        padding: 4px;
+        text-align: left;
+    }
+
+    /*
+    #node-input-conditions-table th:nth-child(1),
+    #node-input-conditions-table td:nth-child(1) {
+        width: 20%;
+    }
+
+    #node-input-conditions-table th:nth-child(2),
+    #node-input-conditions-table td:nth-child(2) {
+        width: 20%;
+    }
+
+    #node-input-conditions-table th:nth-child(3),
+    #node-input-conditions-table td:nth-child(3) {
+        width: 20%;
+    }
+
+    #node-input-conditions-table th:nth-child(4),
+    #node-input-conditions-table td:nth-child(4) {
+        width: 20%;
+    }
+
+    #node-input-conditions-table th:nth-child(5),
+    #node-input-conditions-table td:nth-child(5) {
+        width: 15%;
+    }
+
+    #node-input-conditions-table th:nth-child(6),
+    #node-input-conditions-table td:nth-child(6) {
+        width: 5%;
+    } */
+
+    #node-input-conditions-table select {
+        width: 80px;
+    }
+
+    #node-input-conditions-table input {
+        width: 60px;
+    }
+</style>
+<script type="text/html" data-template-name="save">
+        <!-- Existing configurations -->
+<div class="form-row">
+    <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
+    <input type="text" id="node-input-name">
+</div>
+<div class="form-row">
+    <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
+    <input type="text" id="node-input-client">
+</div>
+<div class="form-row">
+    <label for="node-input-storage"><i class="fa fa-file"></i>Storage</label>
+    <select id="node-input-storage">
+        <option value="local">Local</option>
+        <option value="external">External</option>
+    </select>
+</div>
+<!-- <div class="form-row">
+    <label for="node-input-duration"><i class="fa fa-hourglass-half"></i> Duration</label>
+    <input type="number" id="node-input-duration" placeholder="Enter duration in seconds">
+    <span> Minutes</span>
+</div> -->
+<div class="form-row">
+    <label for="node-input-slice"><i class="fa fa-clock"></i>Slice</label>
+    <select id="node-input-slice">
+        <option value="120">2</option>
+        <option value="300">5</option>
+        <option value="600">10</option>
+    </select>
+    <span> Minutes</span>
+</div>
+<!-- Trigger Conditions -->
+<!-- <div class="form-row">
+    <label><i class="fa fa-cogs"></i> Conditions</label>
+    <table id="node-input-conditions-table" class="">
+        <tbody id="node-input-conditions-container">
+        </tbody>
+    </table>
+    <button id="add-condition" class="btn btn-default"><i class="fa fa-plus"></i> Add Condition</button>
+</div> -->
+</script>
 <script type="text/javascript">
     RED.nodes.registerType('save', {
         category: 'sscma',
@@ -34,12 +97,105 @@
             slice: { value: "30" },
             storage: { value: "local" },
             client: { type: "sscma", required: true, label: RED._("sscma") },
+            conditions: { value: [] }, // Array to store conditions
+            duration: { value: 0 } // Default duration (0 means indefinite)
         },
         inputs: 1,
         outputs: 0,
         icon: "font-awesome/fa-save",
         label: function () {
             return this.name || "save";
+        },
+        oneditprepare: function () {
+            let container = $('#node-input-conditions-container');
+            let conditions = this.conditions || [];
+            conditions.forEach((condition, index) => {
+                addConditionToTable(container, condition, index);
+            });
+
+            $('#add-condition').on('click', function () {
+                let index = container.children().length;
+                addConditionToTable(container, { function: "score", target: 0, comparator: ">", value: 0, logic: "or" }, index);
+            });
+
+            function addConditionToTable(container, condition, index) {
+                let row = $('<tr>').addClass('condition-row');
+                row.html(`
+                    <td>
+                        <select class="form-control" data-field="function">
+                            <option value="score" ${condition.function === "score" ? 'selected' : ''}>Score</option>
+                            <option value="count" ${condition.function === "count" ? 'selected' : ''}>Count</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control" data-field="target" value="${condition.target}" min="0">
+                    </td>
+                    <td>
+                        <select class="form-control" data-field="comparator">
+                            <option value=">" ${condition.comparator === ">" ? 'selected' : ''}>></option>
+                            <option value="<" ${condition.comparator === "<" ? 'selected' : ''}><</option>
+                            <option value=">=" ${condition.comparator === ">=" ? 'selected' : ''}>>=</option>
+                            <option value="<=" ${condition.comparator === "<=" ? 'selected' : ''}><=</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="number" class="form-control" data-field="value" value="${condition.value}" min="0">
+                    </td>
+                    <td>
+                        <select class="form-control" data-field="logic">
+                            <option value="or" ${condition.logic === "or" ? 'selected' : ''}>OR</option>
+                            <option value="and" ${condition.logic === "and" ? 'selected' : ''}>AND</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="remove-condition btn btn-danger btn-sm" data-index="${index}">Remove</button>
+                    </td>
+                `);
+                container.append(row);
+            }
+
+            container.on('click', '.remove-condition', function (index) {
+                container.children().eq(index).remove();
+                this.conditions.splice(index, 1);
+                container.children().each((i, el) => {
+                    $(el).find('[data-index]').each((j, elem) => {
+                        $(elem).data('index', i);
+                    });
+                });
+            }.bind(this));
+        },
+        oneditsave: function () {
+            this.conditions = $('#node-input-conditions-container').children().map(function () {
+                let row = $(this);
+                return {
+                    function: row.find('[data-field="function"]').val(),
+                    target: parseInt(row.find('[data-field="target"]').val(), 10),
+                    comparator: row.find('[data-field="comparator"]').val(),
+                    value: parseInt(row.find('[data-field="value"]').val(), 10),
+                    logic: row.find('[data-field="logic"]').val()
+                };
+            }).get();
+            console.log(this.conditions);
+        },
+        oneditcancel: function () {
+            // Logic to handle cancellation if necessary
+        }
+    });
+
+    function triggerLogic(msg, config) {
+        let expression = config.conditions.map(cond => {
+            let value = (cond.function === 'score') ? msg.scores[cond.target] : msg.counts[cond.target];
+            return `${cond.function}(${cond.target} ${cond.comparator} ${cond.value})`;
+        }).join(` ${config.conditions[0].logic} `);
+
+        return eval(expression.replace(/score\(/g, '').replace(/count\(/g, ''));
+    }
+
+    node.on('input', function (msg) {
+        let trigger = triggerLogic(msg, node.config);
+
+        if (trigger) {
+            // Execute video slicing, saving logic, etc.
         }
     });
 </script>
