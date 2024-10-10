@@ -390,12 +390,17 @@
         },
         oneditsave: function () {
             const node = this;
-            var host = "localhost";
+            var host = window.location.hostname;
             RED.nodes.eachConfig(function (c) {
                 if (c.id === node.client) {
                     host = c.host;
                 }
             })
+            
+            if(host == "localhost" || host == "127.0.0.1"){
+                host = window.location.hostname;
+            }
+
 
             var uploadFile = document.getElementById('upload-file');
             if (uploadFile.files.length > 0) {

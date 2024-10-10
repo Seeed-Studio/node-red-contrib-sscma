@@ -38,8 +38,8 @@
         defaults: {
             name: { value: this.name || "stream" },
             protocol: { value: 0 },
-            port: { value: 554 },
-            session: { value: "live" },
+            port: { value: 554, required: true },
+            session: { value: "live", required: true },
             username: { value: "admin", required: true },
             password: { value: "admin", required: true },
             client: { type: "sscma", required: true, label: RED._("sscma") },

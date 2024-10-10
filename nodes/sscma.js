@@ -80,19 +80,31 @@ module.exports = function (RED) {
             RED.nodes.eachNode(function (n) {
                 if (n.wires != undefined) {
                     n.wires.forEach(wires => {
-                        if (wires.includes(Node.id) && !dependencies.includes(n.id) && n.client == node.id) {
+                        if (wires.includes(Node.id) && !dependencies.includes(n.id) && n.client == node.id && !n.d) {
                             dependencies.push(n.id);
                         }
                     });
                 }
             });
-
-            //console.log("dependencies", dependencies);
+            // only add wires if it is a sscma node
+            let dependents = [];
+            Node.wires.forEach(wires => {
+                wires.forEach(wire =>{
+                    RED.nodes.eachNode(function (n) {
+                        if (n.id == wire && !dependents.includes(n.id) && n.client == node.id && !n.d) {
+                            dependents.push(n.id);
+                        }
+                    })
+                   
+                });
+            });
+        
 
             const create = {
                 "type": Node.type,
                 "config": Node.config,
                 "dependencies": dependencies,
+                "dependents": dependents,
             }
             Node.status({ fill: "yellow", shape: "ring", text: "node-red:common.status.connecting" });
             node.request(Node.id, "create", create);

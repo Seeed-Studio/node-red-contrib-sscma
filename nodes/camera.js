@@ -1,3 +1,5 @@
+const { option } = require("grunt");
+
 module.exports = function (RED) {
     'use strict';
 
@@ -5,37 +7,9 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, n);
         const node = this;
         node.client = RED.nodes.getNode(n.client);
-        node.config = [
-            {
-                channel: 0,
-                enabled: false
-
-            },
-            {
-                channel: 1,
-                enabled: false
-            },
-            {
-                channel: 2,
-                width: +n.width || 640,
-                height: +n.height || 480,
-                fps: +n.fps || 30,
-                enabled: false
-            }
-        ]
-
-        RED.nodes.eachNode((n) => {
-            if (node.wires.some(w => w.includes(n.id))) {
-                if (n.d) { 
-                    return;
-                }
-                if (n.type == 'model') {
-                    node.config[0].enabled = true
-                }else if (n.type == 'save' || n.type == 'stream') {
-                    node.config[2].enabled = true
-                }
-            }
-        })
+        node.config = {
+            option: n.option || 0
+        }
 
         node.receive = function (msg) {
             if (msg.type == 'sscma' && msg.payload.code == 0) {

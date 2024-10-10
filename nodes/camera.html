@@ -8,11 +8,11 @@
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
-        <label for="node-input-resolution">
+        <label for="node-input-option">
             <i class="fa fa-arrows-alt"></i> Resolution
         </label>
-        <select id="node-input-resolution" value="1080p">
-            <option value="1080p">1080p (1920x1080)</option>
+        <select id="node-input-option" >
+            <option value="1080p" selected>1080p (1920x1080)</option>
             <option value="720p">720p (1280x720)</option>
         </select>
     </div>
@@ -36,10 +36,7 @@
         category: 'sscma',
         color: '#9464C4',
         defaults: {
-            resolution: { value: "", required: true },
-            width: { value: "1920" },
-            height: { value: "1080" },
-            fps: { value: "30" },
+            option: { value: "1080p", required: true },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 0,
@@ -49,22 +46,6 @@
             return this.name || "camera";
         },
         oneditprepare: function () {
-            const resolutionSelect = $("#node-input-resolution");
-            const widthInput = $("#node-input-width");
-            const heightInput = $("#node-input-height");
-            // Handle resolution change
-            resolutionSelect.on('change', function () {
-                if (this.value === '1080p') {
-                    widthInput.val(1920);
-                    heightInput.val(1080);
-                } else if (this.value === '720p') {
-                    widthInput.val(1280);
-                    heightInput.val(720);
-                } else {
-                    widthInput.val('');
-                    heightInput.val('');
-                }
-            });
         }
     });
     RED.events.on('nodes:add', function (node) {
