@@ -1,5 +1,3 @@
-const { option } = require("grunt");
-
 module.exports = function (RED) {
     'use strict';
 

@@ -381,11 +381,10 @@
                 }
             }
 
-            var classes = classesInput.value.split(',');
+            var classes = classesInput.value.split(',');;
             for (var i = 0; i < classes.length; i++) {
                 createClassInput(i, classes[i]);
             }
-            createClassInput(classes.length);
 
         },
         oneditsave: function () {
