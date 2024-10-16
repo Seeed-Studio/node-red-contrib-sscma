@@ -70,11 +70,8 @@ module.exports = function (RED) {
             if (Object.keys(node.users).length === 1) {
                 if (node.autoConnect) {
                     node.connect();
-                    //update nodes status
-                    // setTimeout(function () {
-                    //     updateStatus(node, true)
-                    // }, 1)
                 }
+                node.request("", "clear", "");
             }
             let dependencies = [];
             RED.nodes.eachNode(function (n) {
@@ -89,16 +86,16 @@ module.exports = function (RED) {
             // only add wires if it is a sscma node
             let dependents = [];
             Node.wires.forEach(wires => {
-                wires.forEach(wire =>{
+                wires.forEach(wire => {
                     RED.nodes.eachNode(function (n) {
                         if (n.id == wire && !dependents.includes(n.id) && n.client == node.id && !n.d) {
                             dependents.push(n.id);
                         }
                     })
-                   
+
                 });
             });
-        
+
 
             const create = {
                 "type": Node.type,
@@ -276,7 +273,6 @@ module.exports = function (RED) {
                     if (done) { done(); }
                 }
             });
-
         }
 
         node.on('close', function (done) {
