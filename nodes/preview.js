@@ -5,13 +5,9 @@ module.exports = function (RED) {
         var node = this;
         this.active = (config.active === null || typeof config.active === "undefined") || config.active;
 
-        function handleError(err, msg, statusText) {
-            node.status({ fill: "red", shape: "dot", text: statusText });
-            node.error(err, msg);
-        }
         node.on("input", function (msg) {
             if (this.active !== true) { return; }
-            RED.comms.publish("image", { id: node.id, data: msg.payload.data });
+            RED.comms.publish("preview", { id: node.id, data: msg.payload.data });
             if (msg.payload.data.counts) {
                 const countA = msg.payload.data.counts[0];
                 const countB = msg.payload.data.counts[1];
@@ -23,7 +19,7 @@ module.exports = function (RED) {
         });
 
         node.on("close", function () {
-            RED.comms.publish("image", { id: this.id });
+            RED.comms.publish("preview", { id: this.id });
             node.status({});
         });
     }

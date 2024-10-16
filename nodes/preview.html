@@ -3,7 +3,6 @@
     const COLORS = [
         '#FF0000',
         '#FFA500',
-        '#FFFF00',
         '#32CD32',
         '#006400',
         '#4169E1',
@@ -158,7 +157,7 @@
 
             $img && $img.remove()
             $group && $group.remove()
-            delete latestImages[id]
+            latestImages[id] && delete latestImages[id]
         }
 
         var redraw = function (node) {
@@ -175,7 +174,6 @@
         }
 
         var render = function (id, data, node) {
-            let i = new Image();
             let $img = document.getElementById("image-output-img-" + id)
             let $group = document.getElementById("image-output-group-" + id)
             if (!$img) {
@@ -185,9 +183,7 @@
                 img.setAttribute('id', "image-output-img-" + id)
                 img.setAttribute('x', '0')
                 img.setAttribute('y', '50')
-                img.setAttribute('width', data.resolution[0])
-                img.setAttribute('height', data.resolution[1])
-                img.addEventListener("click", function () { remove(id) }, { once: true })
+                img.addEventListener("click", function () { remove(id) }, { once: false })
                 $container.insertBefore(img, $container.lastChild.nextSibling)
                 $img = img
             }
@@ -201,151 +197,166 @@
                 $container.insertBefore(group, $container.lastChild.nextSibling)
                 $group = group
             }
+            //remove all the children 
+            $group.innerHTML = "";
 
-            i.onload = function () {
-
+            if (data.image) {
                 $img.setAttribute('href', "data:image/jpeg;base64," + data.image);
-                //remove all the children 
-                $group.innerHTML = "";
-                if (data?.lines) {
-                    for (let i = 0; i < data.lines.length; i += 1) {
-                        const line = data.lines;
-                        const x1 = line[0] * 0.01 * data.resolution[0];
-                        const y1 = line[1] * 0.01 * data.resolution[1];
-                        const x2 = line[2] * 0.01 * data.resolution[0];
-                        const y2 = line[3] * 0.01 * data.resolution[1];
-                        const color = COLORS[i % COLORS.length];
-                        const lineElement = document.createElementNS("http://www.w3.org/2000/svg", 'line')
-                        lineElement.setAttribute('x1', x1)
-                        lineElement.setAttribute('y1', y1)
-                        lineElement.setAttribute('x2', x2)
-                        lineElement.setAttribute('y2', y2)
-                        lineElement.setAttribute('stroke', color)
-                        lineElement.setAttribute('stroke-width', '3')
-                        $group.appendChild(lineElement)
-                    }
-
+            } else {
+                if (data?.resolution) {
+                    const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
+                    rect.setAttribute('x', '0')
+                    rect.setAttribute('y', '0')
+                    rect.setAttribute('width', data.resolution[0])
+                    rect.setAttribute('height', data.resolution[1])
+                    rect.setAttribute('fill', 'black')
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", 'text')
+                    text.setAttribute('x', 10)
+                    text.setAttribute('y', 20)
+                    text.setAttribute('font-size', '16');
+                    text.setAttribute('fill', 'yellow');
+                    text.setAttribute('stroke', 'yellow');
+                    text.setAttribute('font-family', 'Arial');
+                    text.textContent = "Warning: Please enable the model node's debug mode to display the actual image."
+                    $group.appendChild(rect)
+                    $group.appendChild(text)
                 }
-                if (data?.boxes) {
-                    const boxes = data.boxes;
-                    for (let i = 0; i < boxes.length; i += 1) {
-                        const box = boxes[i];
-                        if (box?.length === 6) {
-                            const x = box[0];
-                            const y = box[1];
-                            const w = box[2];
-                            const h = box[3];
-                            const score = box[4];
-                            const tar = parseInt(box[5], 10);
-                            const color = COLORS[tar % COLORS.length];
-                            let tarStr = data.labels ? data.labels[tar] : tar.toString()
-                            const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
-                            rect.setAttribute('x', x - w / 2)
-                            rect.setAttribute('y', y - h / 2)
-                            rect.setAttribute('width', w)
-                            rect.setAttribute('height', h)
-                            rect.setAttribute('fill', "none")
-                            rect.setAttribute('stroke', color)
-                            rect.setAttribute('stroke-width', '2')
-                            rect.setAttribute('data-tar', tarStr)
-                            rect.setAttribute('data-score', score)
-                            $group.appendChild(rect)
-                            const rect_text = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
-                            rect_text.setAttribute('x', x - w / 2)
-                            rect_text.setAttribute('y', y - h / 2 - 14)
-                            rect_text.setAttribute('width', w)
-                            rect_text.setAttribute('height', 14)
-                            rect.setAttribute('stroke', color)
-                            rect.setAttribute('stroke-width', '2')
-                            rect_text.setAttribute('fill', color)
-                            $group.appendChild(rect_text)
-                            const text = document.createElementNS("http://www.w3.org/2000/svg", 'text')
-                            text.setAttribute('x', x - w / 2 + 5)
-                            text.setAttribute('y', y - h / 2 - 2)
-                            text.setAttribute('font-size', '14');
-                            text.setAttribute('fill', 'white');
-                            text.setAttribute('stroke', 'white');
-                            text.setAttribute('font-family', 'Arial');
-                            if (data?.tracks) {
-                                text.textContent = `#${data.tracks[i]}: ${tarStr}(${score})`
-                            } else {
-                                text.textContent = `${tarStr}(${score})`;
-                            }
-                            $group.appendChild(text)
-                        }
-                    }
-                }
-                if (data?.classes) {
-                    const classes = data.classes;
-                    for (let i = 0; i < classes.length; i += 1) {
-
-                        const tar = classes[i][1];
-                        const score = classes[i][0];
-
-                        let tarStr = data.labels ? data.labels[tar] : tar.toString()
-
-                        const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-                        const rectWidth = data.resolution[0] / classes.length;
-                        const rectHeight = data.resolution[1] / 16;
-                        rect.setAttribute('x', rectWidth * i);
-                        rect.setAttribute('y', 0);
-                        rect.setAttribute('width', rectWidth);
-                        rect.setAttribute('height', rectHeight);
-                        rect.setAttribute('fill', COLORS[tar % COLORS.length]);
-                        rect.setAttribute('fill-opacity', 0.3);
-
-                        const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-                        text.setAttribute('x', rectWidth * i);
-                        text.setAttribute('y', data.resolution[1] / 24);
-                        text.setAttribute('font-size', data.resolution[1] / 24);
-                        text.setAttribute('font-weight', 'bold');
-                        text.setAttribute('font-family', 'arial');
-                        text.setAttribute('fill', '#ffffff');
-                        text.textContent = `${tarStr}: ${score}`;
-                        $group.appendChild(rect);
-                        $group.appendChild(text);
-                    }
-                }
-                //     if (data?.counts) {
-                //     const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-                //     const rectWidth = data.resolution[0];
-                //     const rectHeight = data.resolution[1] / 16;
-                //     const countA = data.counts[0];
-                //     const countB = data.counts[1];
-                //     const countAB = data.counts[2];
-                //     const countBA = data.counts[3];
-                //     rect.setAttribute('x', 0);
-                //     rect.setAttribute('y', 0);
-                //     rect.setAttribute('width', rectWidth);
-                //     rect.setAttribute('height', rectHeight);
-                //     rect.setAttribute('fill', COLORS[0]);
-                //     rect.setAttribute('fill-opacity', 0.3);
-                //     const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-                //     text.setAttribute('x', 0);
-                //     text.setAttribute('y', data.resolution[1] / 24);
-                //     text.setAttribute('font-size', data.resolution[1] / 24);
-                //     text.setAttribute('font-weight', 'bold');
-                //     text.setAttribute('font-family', 'arial');
-                //     text.setAttribute('fill', '#ffffff');
-                //     text.textContent = `A: ${countA} B: ${countB} A->B: ${countAB} B->A: ${countBA}`
-                //     $group.appendChild(rect);
-                //     $group.appendChild(text);
-                // }
             }
-            i.src = "data:image/jpeg;base64," + data.image;
+
+            if (data?.lines) {
+                for (let i = 0; i < data.lines.length; i += 1) {
+                    const line = data.lines;
+                    const x1 = line[0] * 0.01 * data.resolution[0];
+                    const y1 = line[1] * 0.01 * data.resolution[1];
+                    const x2 = line[2] * 0.01 * data.resolution[0];
+                    const y2 = line[3] * 0.01 * data.resolution[1];
+                    const color = COLORS[i % COLORS.length];
+                    const lineElement = document.createElementNS("http://www.w3.org/2000/svg", 'line')
+                    lineElement.setAttribute('x1', x1)
+                    lineElement.setAttribute('y1', y1)
+                    lineElement.setAttribute('x2', x2)
+                    lineElement.setAttribute('y2', y2)
+                    lineElement.setAttribute('stroke', color)
+                    lineElement.setAttribute('stroke-width', '3')
+                    $group.appendChild(lineElement)
+                }
+            }
+            if (data?.boxes) {
+                const boxes = data.boxes;
+                for (let i = 0; i < boxes.length; i += 1) {
+                    const box = boxes[i];
+                    if (box?.length === 6) {
+                        const x = box[0];
+                        const y = box[1];
+                        const w = box[2];
+                        const h = box[3];
+                        const score = box[4];
+                        const tar = parseInt(box[5], 10);
+                        const color = COLORS[tar % COLORS.length];
+                        let tarStr = data.labels ? data.labels[tar] ? data.labels[tar] : tar.toString() : tar.toString();
+                        const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
+                        rect.setAttribute('x', x - w / 2)
+                        rect.setAttribute('y', y - h / 2)
+                        rect.setAttribute('width', w)
+                        rect.setAttribute('height', h)
+                        rect.setAttribute('fill', "none")
+                        rect.setAttribute('stroke', color)
+                        rect.setAttribute('stroke-width', '2')
+                        rect.setAttribute('data-tar', tarStr)
+                        rect.setAttribute('data-score', score)
+                        $group.appendChild(rect)
+                        const rect_text = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
+                        rect_text.setAttribute('x', x - w / 2)
+                        rect_text.setAttribute('y', y - h / 2 - 14)
+                        rect_text.setAttribute('width', w)
+                        rect_text.setAttribute('height', 14)
+                        rect.setAttribute('stroke', color)
+                        rect.setAttribute('stroke-width', '2')
+                        rect_text.setAttribute('fill', color)
+                        $group.appendChild(rect_text)
+                        const text = document.createElementNS("http://www.w3.org/2000/svg", 'text')
+                        text.setAttribute('x', x - w / 2 + 5)
+                        text.setAttribute('y', y - h / 2 - 2)
+                        text.setAttribute('font-size', '14');
+                        text.setAttribute('fill', 'white');
+                        text.setAttribute('stroke', 'white');
+                        text.setAttribute('font-family', 'Arial');
+                        if (data?.tracks) {
+                            text.textContent = `#${data.tracks[i]}: ${tarStr}(${score})`
+                        } else {
+                            text.textContent = `${tarStr}(${score})`;
+                        }
+                        $group.appendChild(text)
+                    }
+                }
+            }
+            // if (data?.classes) {
+            //     const classes = data.classes;
+            //     for (let i = 0; i < classes.length; i += 1) {
+
+            //         const tar = classes[i][1];
+            //         const score = classes[i][0];
+
+            //         let tarStr = data.labels ? data.labels[tar] ? data.labels[tar] : tar.toString() : tar.toString();
+
+            //         const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+            //         const rectWidth = data.resolution[0] / classes.length;
+            //         const rectHeight = data.resolution[1] / 16;
+            //         rect.setAttribute('x', rectWidth * i);
+            //         rect.setAttribute('y', 0);
+            //         rect.setAttribute('width', rectWidth);
+            //         rect.setAttribute('height', rectHeight);
+            //         rect.setAttribute('fill', COLORS[tar % COLORS.length]);
+            //         rect.setAttribute('fill-opacity', 0.3);
+
+            //         const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+            //         text.setAttribute('x', rectWidth * i);
+            //         text.setAttribute('y', data.resolution[1] / 24);
+            //         text.setAttribute('font-size', data.resolution[1] / 24);
+            //         text.setAttribute('font-weight', 'bold');
+            //         text.setAttribute('font-family', 'arial');
+            //         text.setAttribute('fill', '#ffffff');
+            //         text.textContent = `${tarStr}: ${score}`;
+            //         $group.appendChild(rect);
+            //         $group.appendChild(text);
+            //     }
+            // }
         }
 
         RED.events.on("editor:save", redraw)
 
-        RED.comms.subscribe('image', function (event, data) {
-            if (data.hasOwnProperty("data")) {
-                latestImages[data.id] = data.data
-                render(data.id, data.data, RED.nodes.node(data.id))
+        function subscribe() {
+            RED.comms.subscribe('preview', function (event, data) {
+                if (data.hasOwnProperty("data")) {
+                    latestImages[data.id] = data.data
+                    render(data.id, data.data, RED.nodes.node(data.id))
+                }
+                else {
+                    remove(data.id);
+                }
+            })
+        }
+
+        function unsubscribe() {
+            RED.comms.unsubscribe('preview', function (event, data) {
+                if (data.hasOwnProperty("data")) {
+                    latestImages[data.id] = data.data
+                    render(data.id, data.data, RED.nodes.node(data.id))
+                }
+                else {
+                    remove(data.id);
+                }
+            })
+        }
+
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) {
+                unsubscribe();
+            } else {
+                subscribe();
             }
-            else {
-                remove(data.id);
-            }
-        })
+        });
+        subscribe();
     })();
 </script>
 
@@ -354,4 +365,5 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
         <input type="text" id="node-input-name">
     </div>
+    <canvas id="canvas" hidden></canvas>
 </script>
