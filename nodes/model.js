@@ -11,7 +11,7 @@ module.exports = function (RED) {
             debug: config.debug,
             counting: config.counting,
             splitter: config.splitter.split(',').map((c) => parseInt(c.trim())),
-            classes: config.classes.split(',').map((c) => c.trim()),
+            labels: config.classes.split(',').map((c) => c.trim()),
         }
 
         node.receive = function (msg) {

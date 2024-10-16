@@ -212,11 +212,44 @@
             var classesInput = document.getElementById('node-input-classes');
             var uploadFile = document.getElementById('upload-file');
 
+
+            var host = window.location.hostname;
+            RED.nodes.eachConfig(function (c) {
+                if (c.id === node.client) {
+                    host = c.host;
+                }
+            })
+
+            if (host == "localhost" || host == "127.0.0.1") {
+                host = window.location.hostname;
+            }
+
+            var classes = classesInput.value.split(',');
+            for (var i = 0; i < classes.length; i++) {
+                createClassInput(i, classes[i], false);
+            }
+
+            fetch('http://' + host + "/api/deviceMgr/getModelInfo")
+                .then(response => response.json())
+                .then(data => {
+                    classesInput.disabled = true;
+                    let model = JSON.parse(data.data.model_info);
+                    modelInput.value = model.model_name;
+                    classesInput.value = model.classes.join(',');
+                    console.log(classesInput.value);
+                    var classes = classesInput.value.split(',');
+                    for (var i = 0; i < classes.length; i++) {
+                        createClassInput(i, classes[i], false);
+                    }
+                });
+
             uploadFile.addEventListener('change', function () {
                 var file = this.files[0];
                 uriInput.value = "";
                 modelInput.value = file.name;
-            })
+                classesContainer.innerHTML = "";
+                createClassInput(0, "", true);
+            });
 
             var isDrawing = false;
             var startX = 0, startY = 0;
@@ -343,7 +376,7 @@
             });
 
             // Create class input with numbering
-            function createClassInput(number, value) {
+            function createClassInput(number, value, editable) {
                 var wrapper = document.createElement('div');
                 wrapper.className = 'node-input-class-wrapper';
 
@@ -355,6 +388,7 @@
                 input.type = 'text';
                 input.placeholder = 'Enter a class label';
                 input.className = 'node-input-class';
+                input.disabled = editable ? false : true;
                 input.addEventListener('input', handleClassInput);
 
                 if (value) {
@@ -377,29 +411,24 @@
                 classesInput.value = values;
 
                 if (event.target === inputs[inputs.length - 1] && event.target.value.trim() !== "") {
-                    createClassInput(inputs.length + 1); // Create a new input with updated numbering
+                    createClassInput(inputs.length + 1, "", true); // Create a new input with updated numbering
                 }
-            }
-
-            var classes = classesInput.value.split(',');;
-            for (var i = 0; i < classes.length; i++) {
-                createClassInput(i, classes[i]);
             }
 
         },
         oneditsave: function () {
             const node = this;
+            var classesInput = document.getElementById('node-input-classes');
             var host = window.location.hostname;
             RED.nodes.eachConfig(function (c) {
                 if (c.id === node.client) {
                     host = c.host;
                 }
             })
-            
-            if(host == "localhost" || host == "127.0.0.1"){
+
+            if (host == "localhost" || host == "127.0.0.1") {
                 host = window.location.hostname;
             }
-
 
             var uploadFile = document.getElementById('upload-file');
             if (uploadFile.files.length > 0) {
@@ -407,9 +436,8 @@
                 var info = {
                     model_id: "0",
                     model_name: file.name,
-                    classes: node.classes.split(',').map((c) => c.trim()),
+                    classes: classesInput.value.split(',').map((c) => c.trim()),
                 }
-
                 const formData = new FormData();
                 formData.append('model_file', file);
                 formData.append('model_info', JSON.stringify(info));
