@@ -89,9 +89,8 @@
             name: { value: this.name || "save" },
             slice: { value: "300" },
             storage: { value: "local" },
+            duration: { value: 0 }, // Default duration (0 means indefinite)
             client: { type: "sscma", required: true, label: RED._("sscma") },
-            conditions: { value: [] }, // Array to store conditions
-            duration: { value: 0 } // Default duration (0 means indefinite)
         },
         inputs: 1,
         outputs: 0,
