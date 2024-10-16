@@ -7,28 +7,6 @@
         <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
         <input type="text" id="node-input-client">
     </div>
-    <div class="form-row">
-        <label for="node-input-option">
-            <i class="fa fa-arrows-alt"></i> Resolution
-        </label>
-        <select id="node-input-option" >
-            <option value="1080p" selected>1080p (1920x1080)</option>
-            <option value="720p">720p (1280x720)</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-width">
-            <i class="fa fa-arrows-h"></i> Width (px)
-        </label>
-        <input type="number" id="node-input-width" readonly>
-    </div>
-    
-    <div class="form-row">
-        <label for="node-input-height">
-            <i class="fa fa-arrows-v"></i> Height (px)
-        </label>
-        <input type="number" id="node-input-height" readonly>
-    </div>
 </script>
 
 <script type="text/javascript">
@@ -36,7 +14,7 @@
         category: 'sscma',
         color: '#9464C4',
         defaults: {
-            option: { value: "1080p", required: true },
+            option: { value: 0, required: true },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 0,
@@ -45,6 +23,7 @@
         label: function () {
             return this.name || "camera";
         },
+
         oneditprepare: function () {
         }
     });
