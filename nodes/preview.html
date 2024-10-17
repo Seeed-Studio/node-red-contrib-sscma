@@ -1,80 +1,25 @@
 <script type="text/javascript">
 
-    const COLORS = [
-        '#FF0000',
-        '#FFA500',
-        '#32CD32',
-        '#006400',
-        '#4169E1',
-        '#0000FF',
-        '#FF1493',
-        '#FFC0CB',
-        '#800080',
-        '#FFD700',
-        '#9ACD32',
-        '#ADFF2F',
-        '#00FFFF',
-        '#1E90FF',
-        '#FF4500',
-        '#CD853F',
-        '#FF8C00',
-        '#FF6347',
-        '#8B4513',
-        '#FF69B4',
-        '#FF00FF',
-        '#BA55D3',
-        '#9400D3',
-        '#8A2BE2',
-        '#4682B4',
-        '#87CEEB',
-        '#00CED1',
-        '#20B2AA',
-        '#FFB6C1',
-        '#696969',
-        '#808080',
-        '#A9A9A9',
-        '#C0C0C0',
-        '#D3D3D3',
-        '#FFFAFA',
-        '#F0FFF0',
-        '#F5F5DC',
-        '#FFE4C4',
-        '#FFDAB9',
-        '#EEE8AA',
-        '#F0E68C',
-        '#BDB76B',
-        '#FFD700',
-        '#F5DEB3',
-        '#D2B48C',
-        '#DEB887',
-        '#BC8F8F',
-        '#F4A460',
-        '#DAA520',
-        '#CD853F',
-        '#A52A2A',
-        '#8B4513',
-        '#D2691E',
-        '#B22222',
-        '#FF6347',
-        '#FF4500',
-        '#FF8C00',
-        '#FFA07A',
-        '#FA8072',
-        '#E9967A',
-        '#FF69B4',
-        '#FF1493',
-        '#DB7093',
-        '#C71585',
-    ];
+    const COLORS = ['#FF0000', '#FFA500', '#32CD32', '#006400', '#4169E1', '#0000FF', '#FF1493', '#FFC0CB'];
+
+    const getColor = function (index) {
+        return COLORS[index % COLORS.length];
+    };
+
+    function createSVGElement(type, attributes = {}) {
+        const element = document.createElementNS("http://www.w3.org/2000/svg", type);
+        Object.keys(attributes).forEach(attr => element.setAttribute(attr, attributes[attr]));
+        return element;
+    }
 
     (function () {
-        const DEFAULT_IMAGE_WIDTH = 640
         RED.nodes.registerType('preview', {
             category: 'sscma',
             color: "#028AFF",
             defaults: {
                 name: { value: "" },
                 active: { value: true },
+                pass: { value: false },
                 outputs: { value: 0 }
             },
             inputs: 1,
@@ -98,47 +43,16 @@
                         url: `image-output/${this.id}/${this.active ? 'enable' : 'disable'}`,
                         type: "POST",
                         success: function (resp, textStatus, xhr) {
-                            const historyEvent = {
-                                t: 'edit',
-                                node: node,
-                                changes: {
-                                    active: !node.active
-                                },
-                                dirty: node.dirty,
-                                changed: node.changed
-                            };
-                            node.changed = true;
-                            node.dirty = true;
-                            RED.nodes.dirty(true);
-                            RED.history.push(historyEvent);
-                            RED.view.redraw();
-                            if (xhr.status == 200) {
-                                RED.notify("Successfully " + resp + ": " + label, "success");
-                            }
+                            updateNodeState(node, !node.active);
+                            notifyResult(xhr.status, resp, label);
                         },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            var message;
-
-                            switch (jqXHR.status) {
-                                case 404:
-                                    message = "node not deployed";
-                                    break;
-                                case 0:
-                                    message = "no response from server";
-                                    break;
-                                default:
-                                    message = `unexpected error (${textStatus}) ${errorThrown}`;
-                            }
-
-                            RED.notify(`<strong>Error</strong>: ${message}`, "error");
-                        }
+                        error: handleAjaxError
                     });
                 }
             },
             oneditprepare: function () {
                 var that = this;
-                // Set a default width of 160 for existing nodes that don't have that field yet.
-                $('#node-input-width').val(this.width || DEFAULT_IMAGE_WIDTH);
+                $('#node-input-width').val(this.width);
 
                 $('#node-input-data').typedInput({
                     default: 'msg',
@@ -148,216 +62,208 @@
             }
         });
 
-        const latestImages = {}
+        const latestImages = {};
 
         var remove = function (nodeid) {
-            const id = nodeid
-            const $img = document.getElementById("image-output-img-" + id)
-            const $group = document.getElementById("image-output-group-" + id)
+            const $img = document.getElementById("image-output-img-" + nodeid);
+            const $group = document.getElementById("image-output-group-" + nodeid);
 
-            $img && $img.remove()
-            $group && $group.remove()
-            latestImages[id] && delete latestImages[id]
-        }
-
-        var redraw = function (node) {
-            const id = node.id
-            const $img = document.getElementById("image-output-img-" + id)
-            const $group = document.getElementById("image-output-group-" + id)
-
-            $img && $img.remove()
-            $group && $group.remove()
-
-            if (latestImages[id]) {
-                render(id, latestImages[id], node)
-            }
-        }
+            if ($img) $img.remove();
+            if ($group) $group.remove();
+            delete latestImages[nodeid];
+        };
 
         var render = function (id, data, node) {
-            let $img = document.getElementById("image-output-img-" + id)
-            let $group = document.getElementById("image-output-group-" + id)
+            const $container = document.getElementById(id);
+            if (!$container) return;
+
+            let $img = document.getElementById(`image-output-img-${id}`);
+            let $group = document.getElementById(`image-output-group-${id}`);
+
             if (!$img) {
-                const $container = document.getElementById(id)
-                if (!$container) { return }
-                const img = document.createElementNS("http://www.w3.org/2000/svg", 'image')
-                img.setAttribute('id', "image-output-img-" + id)
-                img.setAttribute('x', '0')
-                img.setAttribute('y', '50')
-                img.addEventListener("click", function () { remove(id) }, { once: false })
-                $container.insertBefore(img, $container.lastChild.nextSibling)
-                $img = img
+                $img = createSVGElement('image', {
+                    id: `image-output-img-${id}`,
+                    x: '0',
+                    y: '50'
+                });
+                $img.addEventListener("click", () => remove(id), { once: false });
+                $container.appendChild($img);
             }
 
             if (!$group) {
-                const $container = document.getElementById(id)
-                if (!$container) { return }
-                const group = document.createElementNS("http://www.w3.org/2000/svg", 'g')
-                group.setAttribute('id', "image-output-group-" + id)
-                group.setAttribute('transform', "translate(0, 50)")
-                $container.insertBefore(group, $container.lastChild.nextSibling)
-                $group = group
+                $group = createSVGElement('g', {
+                    id: `image-output-group-${id}`,
+                    transform: "translate(0, 50)"
+                });
+                $container.appendChild($group);
             }
-            //remove all the children 
-            $group.innerHTML = "";
+
+            $group.innerHTML = ""; // Clear existing content
 
             if (data.image) {
-                $img.setAttribute('href', "data:image/jpeg;base64," + data.image);
-            } else {
-                if (data?.resolution) {
-                    const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
-                    rect.setAttribute('x', '0')
-                    rect.setAttribute('y', '0')
-                    rect.setAttribute('width', data.resolution[0])
-                    rect.setAttribute('height', data.resolution[1])
-                    rect.setAttribute('fill', 'black')
-                    const text = document.createElementNS("http://www.w3.org/2000/svg", 'text')
-                    text.setAttribute('x', 10)
-                    text.setAttribute('y', 20)
-                    text.setAttribute('font-size', '16');
-                    text.setAttribute('fill', 'yellow');
-                    text.setAttribute('stroke', 'yellow');
-                    text.setAttribute('font-family', 'Arial');
-                    text.textContent = "Warning: Please enable the model node's debug mode to display the actual image."
-                    $group.appendChild(rect)
-                    $group.appendChild(text)
-                }
+                $img.setAttribute('href', `data:image/jpeg;base64,${data.image}`);
+            } else if (data?.resolution) {
+                const rect = createSVGElement('rect', {
+                    x: '0',
+                    y: '0',
+                    width: data.resolution[0],
+                    height: data.resolution[1],
+                    fill: 'black'
+                });
+                const text = createSVGElement('text', {
+                    x: 10,
+                    y: 20,
+                    'font-size': '16',
+                    fill: 'yellow',
+                    stroke: 'yellow',
+                    'font-family': 'Arial'
+                });
+                text.textContent = "Warning: Please enable the model node's debug mode to display the actual image.";
+                $group.appendChild(rect);
+                $group.appendChild(text);
             }
 
             if (data?.lines) {
-                for (let i = 0; i < data.lines.length; i += 1) {
-                    const line = data.lines;
-                    const x1 = line[0] * 0.01 * data.resolution[0];
-                    const y1 = line[1] * 0.01 * data.resolution[1];
-                    const x2 = line[2] * 0.01 * data.resolution[0];
-                    const y2 = line[3] * 0.01 * data.resolution[1];
-                    const color = COLORS[i % COLORS.length];
-                    const lineElement = document.createElementNS("http://www.w3.org/2000/svg", 'line')
-                    lineElement.setAttribute('x1', x1)
-                    lineElement.setAttribute('y1', y1)
-                    lineElement.setAttribute('x2', x2)
-                    lineElement.setAttribute('y2', y2)
-                    lineElement.setAttribute('stroke', color)
-                    lineElement.setAttribute('stroke-width', '3')
-                    $group.appendChild(lineElement)
-                }
+                data.lines.forEach((line, i) => {
+                    const [x1, y1, x2, y2] = line.map((val, idx) => val * 0.01 * data.resolution[idx % 2]);
+                    const color = getColor(i);
+                    const lineElement = createSVGElement('line', {
+                        x1, y1, x2, y2,
+                        stroke: color,
+                        'stroke-width': '3'
+                    });
+                    $group.appendChild(lineElement);
+                });
             }
+
             if (data?.boxes) {
-                const boxes = data.boxes;
-                for (let i = 0; i < boxes.length; i += 1) {
-                    const box = boxes[i];
+                data.boxes.forEach((box, i) => {
                     if (box?.length === 6) {
-                        const x = box[0];
-                        const y = box[1];
-                        const w = box[2];
-                        const h = box[3];
-                        const score = box[4];
-                        const tar = parseInt(box[5], 10);
-                        const color = COLORS[tar % COLORS.length];
-                        let tarStr = data.labels ? data.labels[tar] ? data.labels[tar] : tar.toString() : tar.toString();
-                        const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
-                        rect.setAttribute('x', x - w / 2)
-                        rect.setAttribute('y', y - h / 2)
-                        rect.setAttribute('width', w)
-                        rect.setAttribute('height', h)
-                        rect.setAttribute('fill', "none")
-                        rect.setAttribute('stroke', color)
-                        rect.setAttribute('stroke-width', '2')
-                        rect.setAttribute('data-tar', tarStr)
-                        rect.setAttribute('data-score', score)
-                        $group.appendChild(rect)
-                        const rect_text = document.createElementNS("http://www.w3.org/2000/svg", 'rect')
-                        rect_text.setAttribute('x', x - w / 2)
-                        rect_text.setAttribute('y', y - h / 2 - 14)
-                        rect_text.setAttribute('width', w)
-                        rect_text.setAttribute('height', 14)
-                        rect.setAttribute('stroke', color)
-                        rect.setAttribute('stroke-width', '2')
-                        rect_text.setAttribute('fill', color)
-                        $group.appendChild(rect_text)
-                        const text = document.createElementNS("http://www.w3.org/2000/svg", 'text')
-                        text.setAttribute('x', x - w / 2 + 5)
-                        text.setAttribute('y', y - h / 2 - 2)
-                        text.setAttribute('font-size', '14');
-                        text.setAttribute('fill', 'white');
-                        text.setAttribute('stroke', 'white');
-                        text.setAttribute('font-family', 'Arial');
-                        if (data?.tracks) {
-                            text.textContent = `#${data.tracks[i]}: ${tarStr}(${score})`
-                        } else {
-                            text.textContent = `${tarStr}(${score})`;
-                        }
-                        $group.appendChild(text)
+                        const [x, y, w, h, score, tar] = box;
+                        const color = getColor(tar);
+                        const tarStr = data.labels?.[tar] || tar.toString();
+                        const rect = createSVGElement('rect', {
+                            x: x - w / 2,
+                            y: y - h / 2,
+                            width: w,
+                            height: h,
+                            fill: "none",
+                            stroke: color,
+                            'stroke-width': '2'
+                        });
+                        $group.appendChild(rect);
+
+                        const rectText = createSVGElement('rect', {
+                            x: x - w / 2,
+                            y: y - h / 2 - 14,
+                            width: w,
+                            height: 16,
+                            fill: color,
+                            stroke: color,
+                            'stroke-width': '2'
+                        });
+                        $group.appendChild(rectText);
+
+                        const text = createSVGElement('text', {
+                            x: x - w / 2 + 5,
+                            y: y - h / 2 - 2,
+                            'font-size': '14',
+                            fill: 'white',
+                            stroke: 'white',
+                            'font-family': 'Arial'
+                        });
+                        text.textContent = data?.tracks ? `#${data.tracks[i]}: ${tarStr}(${score})` : `${tarStr}(${score})`;
+                        $group.appendChild(text);
                     }
-                }
+                });
             }
-            // if (data?.classes) {
-            //     const classes = data.classes;
-            //     for (let i = 0; i < classes.length; i += 1) {
 
-            //         const tar = classes[i][1];
-            //         const score = classes[i][0];
+            if (data?.classes) {
+                const rectHeight = data.resolution[1] / 16;
+                data.classes.forEach(([score, tar], i) => {
+                    const tarStr = data.labels?.[tar] || tar.toString();
+                    const rectWidth = data.resolution[0] / data.classes.length;
+                    const rect = createSVGElement('rect', {
+                        x: rectWidth * i,
+                        y: 0,
+                        width: rectWidth,
+                        height: rectHeight,
+                        fill: getColor(tar),
+                        'fill-opacity': 0.3
+                    });
+                    $group.appendChild(rect);
 
-            //         let tarStr = data.labels ? data.labels[tar] ? data.labels[tar] : tar.toString() : tar.toString();
+                    const text = createSVGElement('text', {
+                        x: rectWidth * i,
+                        y: data.resolution[1] / 24,
+                        'font-size': data.resolution[1] / 24,
+                        'font-weight': 'bold',
+                        'font-family': 'arial',
+                        fill: '#ffffff'
+                    });
+                    text.textContent = `${tarStr}: ${score}`;
+                    $group.appendChild(text);
+                });
+            }
+        };
 
-            //         const rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
-            //         const rectWidth = data.resolution[0] / classes.length;
-            //         const rectHeight = data.resolution[1] / 16;
-            //         rect.setAttribute('x', rectWidth * i);
-            //         rect.setAttribute('y', 0);
-            //         rect.setAttribute('width', rectWidth);
-            //         rect.setAttribute('height', rectHeight);
-            //         rect.setAttribute('fill', COLORS[tar % COLORS.length]);
-            //         rect.setAttribute('fill-opacity', 0.3);
+        var updateNodeState = function (node, newState) {
+            const historyEvent = {
+                t: 'edit',
+                node: node,
+                changes: {
+                    active: newState
+                },
+                dirty: node.dirty,
+                changed: node.changed
+            };
+            node.changed = true;
+            node.dirty = true;
+            RED.nodes.dirty(true);
+            RED.history.push(historyEvent);
+            RED.view.redraw();
+        };
 
-            //         const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-            //         text.setAttribute('x', rectWidth * i);
-            //         text.setAttribute('y', data.resolution[1] / 24);
-            //         text.setAttribute('font-size', data.resolution[1] / 24);
-            //         text.setAttribute('font-weight', 'bold');
-            //         text.setAttribute('font-family', 'arial');
-            //         text.setAttribute('fill', '#ffffff');
-            //         text.textContent = `${tarStr}: ${score}`;
-            //         $group.appendChild(rect);
-            //         $group.appendChild(text);
-            //     }
-            // }
-        }
+        var notifyResult = function (status, resp, label) {
+            if (status == 200) {
+                RED.notify(`Successfully ${resp}: ${label}`, "success");
+            }
+        };
 
-        RED.events.on("editor:save", redraw)
+        var handleAjaxError = function (jqXHR, textStatus, errorThrown) {
+            let message;
+            switch (jqXHR.status) {
+                case 404: message = "node not deployed"; break;
+                case 0: message = "no response from server"; break;
+                default: message = `unexpected error (${textStatus}) ${errorThrown}`;
+            }
+            RED.notify(`<strong>Error</strong>: ${message}`, "error");
+        };
 
         function subscribe() {
+            $.ajax({
+                url: `image-output/0/start`,
+                type: "POST"
+            });
             RED.comms.subscribe('preview', function (event, data) {
+                $.ajax({
+                    url: `image-output/${data.id}/start`,
+                    type: "POST"
+                });
                 if (data.hasOwnProperty("data")) {
-                    latestImages[data.id] = data.data
-                    render(data.id, data.data, RED.nodes.node(data.id))
-                }
-                else {
+                    latestImages[data.id] = data.data;
+                    render(data.id, data.data, RED.nodes.node(data.id));
+                } else {
                     remove(data.id);
                 }
-            })
+            });
         }
-
-        function unsubscribe() {
-            RED.comms.unsubscribe('preview', function (event, data) {
-                if (data.hasOwnProperty("data")) {
-                    latestImages[data.id] = data.data
-                    render(data.id, data.data, RED.nodes.node(data.id))
-                }
-                else {
-                    remove(data.id);
-                }
-            })
-        }
-
-        document.addEventListener("visibilitychange", function () {
-            if (document.hidden) {
-                unsubscribe();
-            } else {
-                subscribe();
-            }
-        });
         subscribe();
+
+
     })();
+
+
 </script>
 
 <script type="text/html" data-template-name="preview">

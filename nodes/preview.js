@@ -3,18 +3,22 @@ module.exports = function (RED) {
     function PreviewNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
+        this.enabled = false;
         this.active = (config.active === null || typeof config.active === "undefined") || config.active;
 
         node.on("input", function (msg) {
-            if (this.active !== true) { return; }
-            RED.comms.publish("preview", { id: node.id, data: msg.payload.data });
-            if (msg.payload.data.counts) {
-                const countA = msg.payload.data.counts[0];
-                const countB = msg.payload.data.counts[1];
-                const countAB = msg.payload.data.counts[2];
-                const countBA = msg.payload.data.counts[3];
-                let textContent = `A: ${countA} B: ${countB} A->B: ${countAB} B->A: ${countBA}`
-                node.status({ fill: "blue", shape: "dot", text: textContent });
+            if (this.active !== true || this.enabled !== true) { return; }
+            if (msg.payload.name === "invoke" || msg.payload.name === "sample") {
+                node.enabled = false;
+                RED.comms.publish("preview", { id: node.id, data: msg.payload.data });
+                if (msg.payload.data.counts) {
+                    const countA = msg.payload.data.counts[0];
+                    const countB = msg.payload.data.counts[1];
+                    const countAB = msg.payload.data.counts[2];
+                    const countBA = msg.payload.data.counts[3];
+                    let textContent = `A: ${countA} B: ${countB} A->B: ${countAB} B->A: ${countBA}`
+                    node.status({ fill: "blue", shape: "dot", text: textContent });
+                }
             }
         });
 
@@ -31,7 +35,18 @@ module.exports = function (RED) {
         var node = RED.nodes.getNode(req.params.id);
 
         if (node === null || typeof node === "undefined") {
-            res.sendStatus(404);
+            // set all the preview node's active state
+            RED.nodes.eachNode(function (n) {
+                var node = RED.nodes.getNode(n.id);
+                if (n.type === "preview") {
+                    if (state === "start") {
+                        node.enabled = true;
+                    }
+                    else if (state === "stop") {
+                        node.enabled = false;
+                    }
+                }
+            })
             return;
         }
         if (state === "enable") {
@@ -42,8 +57,16 @@ module.exports = function (RED) {
             node.active = false;
             res.send('deactivated');
         }
+        else if (state === "start") {
+            node.enabled = true;
+            res.send('started');
+        } else if (state === "stop") {
+            node.enabled = false;
+            res.send('stopped');
+        }
         else {
             res.sendStatus(404);
         }
     });
+
 };
