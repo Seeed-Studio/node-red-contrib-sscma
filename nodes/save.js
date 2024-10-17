@@ -5,15 +5,29 @@ module.exports = function (RED) {
         node.client = RED.nodes.getNode(config.client);
         node.config = {
             storage: config.storage,
-            slice: +config.slice
+            slice: +config.slice,
+            duration: +config.duration * 60,
+            enabled: config.start
         }
 
         node.receive = function (msg) {
-            node.send(msg);
+            if (msg.hasOwnProperty('enabled')) {
+                if (msg.enabled) {
+                    node.client.request(node.id, "enable", "");
+                } else {
+                    node.client.request(node.id, "disable", "");
+                }
+            }
+            if (msg.type === "sscma") {
+                if (msg.payload.name === "start") {
+                    node.status({ fill: "blue", shape: "dot", text: "running" });
+                }
+                if (msg.payload.name === "stop") {
+                    node.status({ fill: "gray", shape: "dot", text: "idle" });
+                }
+            }
         }
 
-
-        
         if (node.client) {
             node.client.register(node);
         }
