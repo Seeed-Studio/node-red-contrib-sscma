@@ -236,8 +236,8 @@
                     let model = JSON.parse(data.data.model_info);
                     modelInput.value = model.model_name;
                     classesInput.value = model.classes.join(',');
-                    console.log(classesInput.value);
                     var classes = classesInput.value.split(',');
+                    classesContainer.innerHTML = "";
                     for (var i = 0; i < classes.length; i++) {
                         createClassInput(i, classes[i], false);
                     }
