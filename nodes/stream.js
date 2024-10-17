@@ -11,15 +11,15 @@ module.exports = function (RED) {
             password: config.password
         }
 
-        node.receive  = function(msg) {
-   
+        node.receive = function (msg) {
+
         }
 
         if (node.client) {
             node.client.register(node);
         }
-        
-        node.on('close', function(removed, done) {
+
+        node.on('close', function (removed, done) {
             if (node.client) {
                 node.client.deregister(node, done, removed);
                 node.client = null;
