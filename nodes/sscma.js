@@ -77,8 +77,19 @@ module.exports = function (RED) {
             RED.nodes.eachNode(function (n) {
                 if (n.wires != undefined) {
                     n.wires.forEach(wires => {
-                        if (wires.includes(Node.id) && !dependencies.includes(n.id) && n.client == node.id && !n.d) {
-                            dependencies.push(n.id);
+                        var id = n.id;
+                        if (Node.id.includes("-")) { // it is a subflow node
+                            var subflow = RED.nodes.getNode(Node.z)
+                            if (subflow.node.type === "subflow:" + n.z) {
+                                id = Node.z + "-" + n.id
+                            }
+                            if (wires.includes(Node.id.split("-")[1]) && !dependencies.includes(id) && n.client == node.id && !n.d) {
+                                dependencies.push(id);
+                            }
+                        } else {
+                            if (wires.includes(Node.id) && !dependencies.includes(id) && n.client == node.id && !n.d) {
+                                dependencies.push(id);
+                            }
                         }
                     });
                 }
@@ -88,8 +99,15 @@ module.exports = function (RED) {
             Node.wires.forEach(wires => {
                 wires.forEach(wire => {
                     RED.nodes.eachNode(function (n) {
-                        if (n.id == wire && !dependents.includes(n.id) && n.client == node.id && !n.d) {
-                            dependents.push(n.id);
+                        var id = n.id;
+                        if (Node.id.includes("-")) { // it is a subflow node
+                            var subflow = RED.nodes.getNode(Node.z)
+                            if (subflow.node.type === "subflow:" + n.z) {
+                                id = Node.z + "-" + n.id
+                            }
+                        }
+                        if (id == wire && !dependents.includes(id) && n.client == node.id && !n.d) {
+                            dependents.push(id);
                         }
                     })
 

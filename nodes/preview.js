@@ -35,11 +35,13 @@ module.exports = function (RED) {
     RED.httpAdmin.post("/image-output/:id/:state", RED.auth.needsPermission("image-output.write"), function (req, res) {
         var state = req.params.state;
         var node = RED.nodes.getNode(req.params.id);
-
         if (node === null || typeof node === "undefined") {
             // set all the preview node's active state
             RED.nodes.eachNode(function (n) {
                 var node = RED.nodes.getNode(n.id);
+                if(node === null){
+                    return;
+                }
                 if (n.type === "preview") {
                     if (state === "start") {
                         node.enabled = true;

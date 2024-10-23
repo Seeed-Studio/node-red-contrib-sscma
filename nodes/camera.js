@@ -44,19 +44,16 @@ module.exports = function (RED) {
     RED.httpAdmin.post("/camera/:id/:state", RED.auth.needsPermission('camera.write'), function (req, res) {
         var id = req.params.id;
         var state = req.params.state;
-        console.log(id, state);
         var node = RED.nodes.getNode(id);
         if (node === null) {
             res.send(404);
             return;
         }
         if (state === "on") {
-            console.log("on");
             node.config.light = 1;
             node.client.request(node.id, "light", node.config.light);
             res.send("on");
         } else if (state === "off") {
-            console.log("off");
             node.config.light = 0;
             node.client.request(node.id, "light", node.config.light);
             res.send("off");
