@@ -8,11 +8,23 @@ module.exports = function (RED) {
             tiou: parseFloat(config.tiou),
             tscore: parseFloat(config.tscore),
             trace: config.trace,
-            debug: config.debug,
+            debug: false,
             counting: config.counting,
             splitter: config.splitter.split(',').map((c) => parseInt(c.trim())),
             labels: config.classes.split(',').map((c) => c.trim()),
         }
+
+        // if connect to preview, set preview to true
+        node.wires.forEach(wires => {
+            wires.forEach(wire => {
+                RED.nodes.eachNode(function (n) {
+                    if (n.id === wire && n.type === "preview" && !n.d) {
+                        node.config.debug = true
+                    }
+                });
+            });
+        });
+
 
         node.message = function (msg) {
             //console.log(msg.payload.name);
