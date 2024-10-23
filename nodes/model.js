@@ -14,10 +14,9 @@ module.exports = function (RED) {
             labels: config.classes.split(',').map((c) => c.trim()),
         }
 
-        node.receive = function (msg) {
-            if (msg.type === "sscma") {
-                node.send(msg)
-            }
+        node.message = function (msg) {
+            //console.log(msg.payload.name);
+            node.send(msg);
         }
         if (node.client) {
             node.client.register(node);

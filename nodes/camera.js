@@ -6,20 +6,23 @@ module.exports = function (RED) {
         const node = this;
         node.client = RED.nodes.getNode(n.client);
         node.config = {
-            option: n.option || 0
+            option: n.option || 0,
+            preview: false
         }
 
-        node.receive = function (msg) {
-            if (msg.type == 'sscma' && msg.payload.code == 0) {
-                const payload = {
-                    type: "node",
-                    payload: {
-                        type: "camera",
-                        id: node.id,
+        // if connect to preview, set preview to true
+        node.wires.forEach(wires => {
+            wires.forEach(wire => {
+                RED.nodes.eachNode(function (n) {
+                    if (n.id === wire && n.type === "preview" && !n.d) {
+                        node.config.preview = true
                     }
-                }
-                node.send(payload);
-            }
+                });
+            });
+        });
+
+        node.message = function (msg) {
+            node.send(msg);
         }
 
         if (node.client) {

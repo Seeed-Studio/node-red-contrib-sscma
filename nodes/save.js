@@ -10,7 +10,7 @@ module.exports = function (RED) {
             enabled: config.start
         }
 
-        node.receive = function (msg) {
+        node.message = function (msg) {
             if (msg.hasOwnProperty('enabled')) {
                 if (msg.enabled) {
                     node.client.request(node.id, "enable", "");

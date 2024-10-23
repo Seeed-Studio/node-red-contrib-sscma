@@ -96,7 +96,6 @@ module.exports = function (RED) {
                 });
             });
 
-
             const create = {
                 "type": Node.type,
                 "config": Node.config,
@@ -175,10 +174,9 @@ module.exports = function (RED) {
                                     node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
                                 }
                                 var msg = {
-                                    type: "sscma",
                                     payload: payload
                                 };
-                                node.users[id].receive(msg);
+                                node.users[id].message(msg);
 
                             } catch (err) {
                                 console.log("Error parsing message: " + err);

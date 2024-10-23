@@ -15,6 +15,7 @@
         color: '#9464C4',
         defaults: {
             option: { value: 0, required: true },
+            active: { value: false },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 0,
@@ -23,8 +24,15 @@
         label: function () {
             return this.name || "camera";
         },
+        button: {
+            toggle: "active",
+            onclick: function () {
+                console.log(node.active);
+            }
+        },
 
         oneditprepare: function () {
+            
         }
     });
     RED.events.on('nodes:add', function (node) {

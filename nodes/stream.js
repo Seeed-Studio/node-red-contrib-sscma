@@ -11,7 +11,7 @@ module.exports = function (RED) {
             password: config.password
         }
 
-        node.receive = function (msg) {
+        node.message = function (msg) {
 
         }
 
