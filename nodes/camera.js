@@ -8,7 +8,7 @@ module.exports = function (RED) {
         node.config = {
             option: n.option || 0,
             preview: false,
-            light: n.active ? 1 : 0
+            light: n.light ? 1 : 0
         }
 
         // if connect to preview, set preview to true

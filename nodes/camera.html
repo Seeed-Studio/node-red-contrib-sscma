@@ -7,6 +7,10 @@
         <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
         <input type="text" id="node-input-client">
     </div>
+     <div class="form-row">
+        <label for="node-input-light"><i class="fa fa-lightbulb-o"></i> Light</label>
+        <input type="checkbox" id="node-input-light">
+    </div>
 </script>
 
 <script type="text/javascript">
@@ -15,7 +19,7 @@
         color: '#9464C4',
         defaults: {
             option: { value: 0, required: true },
-            active: { value: false },
+            light: { value: false },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 0,
@@ -25,20 +29,19 @@
             return this.name || "camera";
         },
         button: {
-            toggle: "active",
+            toggle: "light",
             onclick: function () {
                 const label = this.name || "camera";
                 var node = this;
-                console.log(node.active);
                 $.ajax({
-                    url: `camera/${this.id}/${this.active ? "on" : "off"}`,
+                    url: `camera/${this.id}/${this.light ? "on" : "off"}`,
                     type: 'post',
                     success: function (data) {
                         const historyEvent = {
                             t: 'edit',
                             node: node,
                             changes: {
-                                active: !node.active
+                                light: !node.light
                             },
                             dirty: node.dirty,
                             changed: node.changed
@@ -66,7 +69,7 @@
         },
 
         oneditprepare: function () {
-            
+
         }
     });
 
