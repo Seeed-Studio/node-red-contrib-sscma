@@ -125,12 +125,15 @@
 
             if (data?.lines) {
                 data.lines.forEach((line, i) => {
-                    const [x1, y1, x2, y2] = line.map((val, idx) => val * 0.01 * data.resolution[idx % 2]);
+                    const x1 = line[0] * 0.01 * data.resolution[0];
+                    const y1 = line[1] * 0.01 * data.resolution[1];
+                    const x2 = line[2] * 0.01 * data.resolution[0];
+                    const y2 = line[3] * 0.01 * data.resolution[1];
                     const color = getColor(i);
                     const lineElement = createSVGElement('line', {
                         x1, y1, x2, y2,
                         stroke: color,
-                        'stroke-width': '3'
+                        'stroke-width': '1'
                     });
                     $group.appendChild(lineElement);
                 });
@@ -246,12 +249,14 @@
                 type: "POST"
             });
             RED.comms.subscribe('preview', function (event, data) {
-                $.ajax({
-                    url: `image-output/${data.id}/start`,
-                    type: "POST"
-                });
                 if (data.hasOwnProperty("data")) {
                     latestImages[data.id] = data.data;
+                    if (data.data.count % 10 === 0) {
+                        $.ajax({
+                            url: `image-output/${data.id}/start`,
+                            type: "POST"
+                        });
+                    }
                     render(data.id, data.data, RED.nodes.node(data.id));
                 } else {
                     remove(data.id);

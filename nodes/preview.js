@@ -3,13 +3,15 @@ module.exports = function (RED) {
     function PreviewNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
-        this.enabled = false;
+        this.enabled = true;
         this.active = (config.active === null || typeof config.active === "undefined") || config.active;
 
         node.on("input", function (msg) {
             if (this.active !== true || this.enabled !== true) { return; }
             if (msg.payload.name === "invoke" || msg.payload.name === "sample") {
-                node.enabled = false;
+                if (msg.payload.data.count % 30 === 0) {
+                    node.enabled = false;
+                }
                 RED.comms.publish("preview", { id: node.id, data: msg.payload.data });
                 if (msg.payload.data.counts) {
                     const countA = msg.payload.data.counts[0];
