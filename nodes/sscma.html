@@ -56,7 +56,14 @@
             return "sscma"
         }
     });
-    RED.events.on('config:add', function (node) {
-        console.log(node)
+    RED.events.on('nodes:add', function (node) {
+        if (node.type == "sscma") {
+            RED.nodes.eachConfig(function (n) {
+                if (n.id != node.id) {
+                    RED.notify("This node can only be instantiated once.", "error");
+                    RED.nodes.remove(node.id);
+                }
+            })
+        }
     });
 </script>

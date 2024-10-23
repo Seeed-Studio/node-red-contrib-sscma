@@ -64,4 +64,11 @@
             // Logic to handle cancellation if necessary
         }
     });
+    RED.events.on('nodes:add', function (node) {
+        const existingNodes = RED.nodes.filterNodes({ type: "save" });
+        if (existingNodes.length > 1) {
+            RED.notify("This node can only be instantiated once.", "error");
+            RED.nodes.remove(node.id);
+        }
+    });
 </script>
