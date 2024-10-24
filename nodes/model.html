@@ -172,7 +172,7 @@
 <script type="text/javascript">
     RED.nodes.registerType('model', {
         category: 'sscma',
-        color: '#2980b9',
+        color: '#5A9FD1',
         defaults: {
             name: { value: "" },
             uri: { value: "" },
@@ -406,7 +406,7 @@
                 classesInput.value = values;
 
                 if (event.target === inputs[inputs.length - 1] && event.target.value.trim() !== "") {
-                    createClassInput(inputs.length + 1, "", true); // Create a new input with updated numbering
+                    createClassInput(inputs.length, "", true); // Create a new input with updated numbering
                 }
             }
 
