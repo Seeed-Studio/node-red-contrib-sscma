@@ -29,6 +29,8 @@ Or install directly through the Node-RED interface.
 4. Connect the node to other nodes for input/output to interact with devices or services.
 5. Deploy the flow to start processing AI data.
 
+<div align="center"><img width="98%" src="https://files.seeedstudio.com/sscma/static/sscma_node_demo.gif"/></div>
+
 ## Example
 
 Below is an example of how `node-red-contrib-sscma` can be used in a flow to connect an AI model’s output to a device:
@@ -41,8 +43,4 @@ This flow processes data using an AI model and sends the results to a connected 
 
 ## License
 
-This project is licensed under the Apache License 2.0. You may obtain a copy of the License at:
-
----
-
-Let me know if you need any other modifications!
+This project is licensed under the Apache License 2.0. 
