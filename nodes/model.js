@@ -8,7 +8,7 @@ module.exports = function (RED) {
             tiou: parseFloat(config.tiou),
             tscore: parseFloat(config.tscore),
             trace: config.trace,
-            debug: false,
+            debug: config.debug,
             counting: config.counting,
             splitter: config.splitter.split(',').map((c) => parseInt(c.trim())),
             labels: config.classes.split(',').map((c) => c.trim()),

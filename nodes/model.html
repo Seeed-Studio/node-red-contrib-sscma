@@ -145,11 +145,15 @@
         <span id="tiou-value"></span>
     </div>
     <div class="form-row">
+        <label for="node-input-debug"><i class="fa fa-bug"></i> Debug</label>
+        <input type="checkbox" id="node-input-debug">
+    </div>
+    <div class="form-row">
         <label for="node-input-trace"><i class="fa fa-toggle-on"></i> Trace</label>
         <input type="checkbox" id="node-input-trace">
     </div>
     <div class="form-row">
-        <label for="node-input-counting"><i class="fa fa-toggle-on"></i> Counting</label>
+        <label for="node-input-counting"><i class="fa fa-ellipsis-h"></i> Counting</label>
         <input type="checkbox" id="node-input-counting">
     </div>
     <div class="form-row" id="splitter-row">
@@ -160,12 +164,12 @@
     <!-- Dynamic class inputs with numbering -->
     <div class="form-row">
         <label for="node-input-classes"><i class="fa fa-list"></i> Classes</label>
+        <input type="text" id="node-input-classes" name="classes">
         <div id="node-input-classes-container">
             <div id="node-input-classes-container-title">Class Labels</div>
             <div id="node-input-classes-container-hint">Enter class labels in order.</div>
             <!-- Container for dynamically added inputs -->
         </div>
-        <input type="hidden" id="node-input-classes" name="classes">
     </div>
 </script>
 
@@ -179,6 +183,7 @@
             model: { value: "" },
             tscore: { value: 0.45 },
             tiou: { value: 0.25 },
+            debug: { value: false },
             trace: { value: false },
             counting: { value: false },
             classes: { value: "" },
@@ -193,8 +198,11 @@
         },
         oneditprepare: function () {
             var node = this;
+            node.modelInfo = "";
+            node.infoChanged = false;
             var uriInput = document.getElementById('node-input-uri');
             var modelInput = document.getElementById('node-input-model');
+            var debugInput = document.getElementById('node-input-debug');
             var traceInput = document.getElementById('node-input-trace');
             var countingInput = document.getElementById('node-input-counting');
             var splitterCanvas = document.getElementById('splitter-canvas');
@@ -206,44 +214,52 @@
             var classesContainer = document.getElementById('node-input-classes-container');
             var classesInput = document.getElementById('node-input-classes');
             var uploadFile = document.getElementById('upload-file');
-
-
-            var host = window.location.hostname;
-            RED.nodes.eachConfig(function (c) {
-                if (c.id === node.client) {
-                    host = c.host;
-                }
-            })
-
-            if (host == "localhost" || host == "127.0.0.1") {
-                host = window.location.hostname;
-            }
+            var clientInput = document.getElementById('node-input-client');
 
             var classes = classesInput.value.split(',');
             for (var i = 0; i < classes.length; i++) {
-                createClassInput(i, classes[i], false);
+                createClassInput(i, classes[i], true);
+            }
+            createClassInput(classes.length, "", true);
+
+            function fetchModelInfo() {
+                var host = window.location.hostname;
+                RED.nodes.eachConfig(function (c) {
+                    if (c.id === node.client) {
+                        host = c.host;
+                    }
+                })
+
+                if (host == "localhost" || host == "127.0.0.1") {
+                    host = window.location.hostname;
+                }
+
+                fetch('http://' + host + "/api/deviceMgr/getModelInfo")
+                    .then(response => response.json())
+                    .then(data => {
+                        node.modelInfo = data.data.model_info;
+                        let model = JSON.parse(data.data.model_info);
+                        modelInput.value = model.model_name;
+                        classesInput.value = model.classes.join(',');
+                        var classes = classesInput.value.split(',');
+                        classesContainer.innerHTML = "";
+                        for (var i = 0; i < classes.length; i++) {
+                            createClassInput(i, classes[i], true);
+                        }
+                        createClassInput(classes.length, "", true);
+                    });
             }
 
-            fetch('http://' + host + "/api/deviceMgr/getModelInfo")
-                .then(response => response.json())
-                .then(data => {
-                    classesInput.disabled = true;
-                    let model = JSON.parse(data.data.model_info);
-                    modelInput.value = model.model_name;
-                    classesInput.value = model.classes.join(',');
-                    var classes = classesInput.value.split(',');
-                    classesContainer.innerHTML = "";
-                    for (var i = 0; i < classes.length; i++) {
-                        createClassInput(i, classes[i], false);
-                    }
-                });
+            fetchModelInfo();
 
             uploadFile.addEventListener('change', function () {
                 var file = this.files[0];
                 uriInput.value = "";
+                classesInput.value = "";
                 modelInput.value = file.name;
                 classesContainer.innerHTML = "";
                 createClassInput(0, "", true);
+                RED.nodes.dirty(true);
             });
 
             var isDrawing = false;
@@ -370,6 +386,20 @@
                 updateSliderValue(tiouInput, tiouValue);
             });
 
+            classesInput.addEventListener('input', function () {
+                node.infoChanged = true;
+                classesContainer.innerHTML = "";
+                var classes = classesInput.value.split(',');
+                for (var i = 0; i < classes.length; i++) {
+                    createClassInput(i, classes[i], true);
+                }
+                createClassInput(classes.length, "", true);
+            })
+
+            clientInput.addEventListener('input', function () {
+                fetchModelInfo();
+            })
+
             // Create class input with numbering
             function createClassInput(number, value, editable) {
                 var wrapper = document.createElement('div');
@@ -397,6 +427,7 @@
 
             function handleClassInput(event) {
                 var inputs = classesContainer.querySelectorAll('.node-input-class');
+                node.infoChanged = true;
                 var values = Array.from(inputs).map(function (input) {
                     return input.value.trim();
                 }).filter(function (value) {
@@ -433,10 +464,23 @@
                     model_name: file.name,
                     classes: classesInput.value.split(',').map((c) => c.trim()),
                 }
+
                 const formData = new FormData();
                 formData.append('model_file', file);
                 formData.append('model_info', JSON.stringify(info));
 
+                fetch(`http://${host}/api/deviceMgr/uploadModel`, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(result => console.log(result))
+                    .catch(error => console.log('error', error));
+            } else if (node.modelInfo && node.infoChanged) {
+                let info = JSON.parse(node.modelInfo);
+                const formData = new FormData();
+                info.classes = classesInput.value.split(',').map((c) => c.trim());
+                formData.append('model_info', JSON.stringify(info));
                 fetch(`http://${host}/api/deviceMgr/uploadModel`, {
                     method: 'POST',
                     body: formData
