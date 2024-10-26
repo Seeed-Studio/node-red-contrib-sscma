@@ -7,6 +7,10 @@
         <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
         <input type="text" id="node-input-client">
     </div>
+    <div class="form-row">
+        <label for="node-input-debug"><i class="fa fa-bug"></i> Debug</label>
+        <input type="checkbox" id="node-input-debug">
+    </div>
      <div class="form-row">
         <label for="node-input-light"><i class="fa fa-lightbulb-o"></i> Light</label>
         <input type="checkbox" id="node-input-light">
@@ -19,6 +23,7 @@
         color: '#B29DDC',
         defaults: {
             option: { value: 0, required: true },
+            debug: { value: false },
             light: { value: false },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },

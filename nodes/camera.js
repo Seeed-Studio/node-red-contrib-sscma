@@ -7,7 +7,7 @@ module.exports = function (RED) {
         node.client = RED.nodes.getNode(n.client);
         node.config = {
             option: n.option || 0,
-            preview: false,
+            preview: n.debug || false,
             light: n.light ? 1 : 0
         }
 
