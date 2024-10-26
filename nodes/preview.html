@@ -251,7 +251,7 @@
             RED.comms.subscribe('preview', function (event, data) {
                 if (data.hasOwnProperty("data")) {
                     latestImages[data.id] = data.data;
-                    if (data.data.count % 10 === 0) {
+                    if (data.data.count % 30 === 0) {
                         $.ajax({
                             url: `image-output/${data.id}/start`,
                             type: "POST"

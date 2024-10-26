@@ -4,13 +4,18 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         var node = this;
         this.enabled = true;
+        this.alive = 0;
         this.active = (config.active === null || typeof config.active === "undefined") || config.active;
 
         node.on("input", function (msg) {
             if (this.active !== true || this.enabled !== true) { return; }
             if (msg.payload.name === "invoke" || msg.payload.name === "sample") {
-                if (msg.payload.data.count % 30 === 0) {
-                    node.enabled = false;
+                if (msg.payload.data.count % 60 === 0) {
+                    node.alive = node.alive + 1;
+                    if (node.alive === 3) {
+                        node.enabled = false;
+                        node.alive = 0;
+                    }
                 }
                 RED.comms.publish("preview", { id: node.id, data: msg.payload.data });
                 if (msg.payload.data.counts) {
@@ -39,15 +44,17 @@ module.exports = function (RED) {
             // set all the preview node's active state
             RED.nodes.eachNode(function (n) {
                 var node = RED.nodes.getNode(n.id);
-                if(node === null){
+                if (node === null) {
                     return;
                 }
                 if (n.type === "preview") {
                     if (state === "start") {
                         node.enabled = true;
+                        node.alive = 0;
                     }
                     else if (state === "stop") {
                         node.enabled = false;
+                        node.alive = 0;
                     }
                 }
             })
@@ -63,9 +70,11 @@ module.exports = function (RED) {
         }
         else if (state === "start") {
             node.enabled = true;
+            node.alive = 0;
             res.send('started');
         } else if (state === "stop") {
             node.enabled = false;
+            node.alive = 0;
             res.send('stopped');
         }
         else {
