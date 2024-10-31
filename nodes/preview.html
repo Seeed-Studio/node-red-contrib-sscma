@@ -266,9 +266,15 @@
                 timeout: 500
             })
         }, 2000);
-
-
     })();
+
+    RED.events.on('nodes:add', function (node) {
+        const existingNodes = RED.nodes.filterNodes({ type: "preview" });
+        if (existingNodes.length > 1) {
+            RED.notify("This node can only be instantiated once.", "error");
+            RED.nodes.remove(node.id);
+        }
+    });
 
 
 </script>
