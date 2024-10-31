@@ -120,6 +120,7 @@ module.exports = function (RED) {
                 "dependencies": dependencies,
                 "dependents": dependents,
             }
+            Node.code = -1;
             Node.status({ fill: "yellow", shape: "ring", text: "node-red:common.status.connecting" });
             node.request(Node.id, "create", create);
         };
@@ -186,11 +187,15 @@ module.exports = function (RED) {
                         if (node.users[id]) {
                             try {
                                 const payload = JSON.parse(message)
+
                                 if (payload.code == 0) {
-                                    node.users[id].status({ fill: "green", shape: "ring", text: "node-red:common.status.connected" });
+                                    if (node.users[id].code != 0) {
+                                        node.users[id].status({ fill: "green", shape: "ring", text: "node-red:common.status.connected" });
+                                    }
                                 } else {
                                     node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
                                 }
+                                node.users[id].code = payload.code
                                 var msg = {
                                     payload: payload
                                 };
