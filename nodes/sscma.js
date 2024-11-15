@@ -48,11 +48,11 @@ module.exports = function (RED) {
 
         const node = this;
         node.users = {};
-
+        console.log(config);
         // Config node state
         node.host = config.host;
         node.port = config.port;
-        node.clientid = config.clientid || "recamera";
+        node.clientid = config.clientid;
         node.username = config.username;
         node.password = config.password;
         node.autoConnect = config.autoConnect || true;
@@ -277,7 +277,7 @@ module.exports = function (RED) {
         }
 
         node.request = function (id, cmd, data, done) {
-            const topic = "sscma/" + node.api + "/recamera/node/in/" + id;
+            const topic = "sscma/" + node.api + "/" + node.clientid + "/node/in/" + id;
             const msg = {
                 name: cmd,
                 type: MsgType.REQUEST,
