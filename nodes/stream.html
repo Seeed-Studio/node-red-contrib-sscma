@@ -23,11 +23,11 @@
     </div>
     <div class="form-row">
         <label for="node-input-username"><i class="fa fa-user"></i> Username</label>
-        <input type="text" id="node-input-username" maxlength="32" required>
+        <input type="text" id="node-input-username" maxlength="32" >
     </div>
     <div class="form-row">
         <label for="node-input-password"><i class="fa fa-lock"></i> Password</label>
-        <input type="password" id="node-input-password" maxlength="32" required>
+        <input type="password" id="node-input-password" maxlength="32" >
     </div>
 </script>
 
@@ -40,8 +40,8 @@
             protocol: { value: 0 },
             port: { value: 554, required: true },
             session: { value: "live", required: true },
-            username: { value: "admin", required: true },
-            password: { value: "admin", required: true },
+            username: { value: "admin", required: false },
+            password: { value: "admin", required: false },
             client: { type: "sscma", required: true, label: RED._("sscma") },
         },
         inputs: 1,
