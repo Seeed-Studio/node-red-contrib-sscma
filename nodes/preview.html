@@ -1,6 +1,72 @@
 <script type="text/javascript">
 
-    const COLORS = ['#FF0000', '#FFA500', '#32CD32', '#006400', '#4169E1', '#0000FF', '#FF1493', '#FFC0CB'];
+    const COLORS = [
+        '#FF0000',
+        '#FFA500',
+        '#FFFF00',
+        '#32CD32',
+        '#006400',
+        '#4169E1',
+        '#0000FF',
+        '#FF1493',
+        '#FFC0CB',
+        '#800080',
+        '#FFD700',
+        '#9ACD32',
+        '#ADFF2F',
+        '#00FFFF',
+        '#1E90FF',
+        '#FF4500',
+        '#CD853F',
+        '#FF8C00',
+        '#FF6347',
+        '#8B4513',
+        '#FF69B4',
+        '#FF00FF',
+        '#BA55D3',
+        '#9400D3',
+        '#8A2BE2',
+        '#4682B4',
+        '#87CEEB',
+        '#00CED1',
+        '#20B2AA',
+        '#FFB6C1',
+        '#696969',
+        '#808080',
+        '#A9A9A9',
+        '#C0C0C0',
+        '#D3D3D3',
+        '#FFFAFA',
+        '#F0FFF0',
+        '#F5F5DC',
+        '#FFE4C4',
+        '#FFDAB9',
+        '#EEE8AA',
+        '#F0E68C',
+        '#BDB76B',
+        '#FFD700',
+        '#F5DEB3',
+        '#D2B48C',
+        '#DEB887',
+        '#BC8F8F',
+        '#F4A460',
+        '#DAA520',
+        '#CD853F',
+        '#A52A2A',
+        '#8B4513',
+        '#D2691E',
+        '#B22222',
+        '#FF6347',
+        '#FF4500',
+        '#FF8C00',
+        '#FFA07A',
+        '#FA8072',
+        '#E9967A',
+        '#FF69B4',
+        '#FF1493',
+        '#DB7093',
+        '#C71585',
+    ]
 
     const getColor = function (index) {
         return COLORS[index % COLORS.length];
@@ -62,7 +128,7 @@
             }
         });
 
-        const latestImages = {}; 
+        const latestImages = {};
 
         var remove = function (nodeid) {
             const $img = document.getElementById("image-output-img-" + nodeid);
@@ -207,6 +273,333 @@
                     text.textContent = `${tarStr}: ${score}`;
                     $group.appendChild(text);
                 });
+            }
+
+            if (data?.keypoints) {
+                data.keypoints.forEach((keypoint, i) => {
+                    const box = keypoint[0];
+                    const keypoints = keypoint[1];
+                    let points = new Set();
+                    if (box?.length === 6) {
+                        const [x, y, w, h, score, tar] = box;
+                        const color = getColor(tar);
+                        const tarStr = data.labels?.[tar] || tar.toString();
+                        const rect = createSVGElement('rect', {
+                            x: x - w / 2,
+                            y: y - h / 2,
+                            width: w,
+                            height: h,
+                            fill: "none",
+                            stroke: color,
+                            'stroke-width': '2'
+                        });
+                        $group.appendChild(rect);
+
+                        const rectText = createSVGElement('rect', {
+                            x: x - w / 2,
+                            y: y - h / 2 - 14,
+                            width: w,
+                            height: 16,
+                            fill: color,
+                            stroke: color,
+                            'stroke-width': '2'
+                        });
+                        $group.appendChild(rectText);
+
+                        const text = createSVGElement('text', {
+                            x: x - w / 2 + 5,
+                            y: y - h / 2 - 2,
+                            'font-size': '14',
+                            fill: 'white',
+                            stroke: 'white',
+                            'font-family': 'Arial'
+                        });
+                        text.textContent = data?.tracks ? `#${data.tracks[i]}: ${tarStr}(${score})` : `${tarStr}(${score})`;
+                        $group.appendChild(text);
+                    }
+
+                    for (let j = 0; j < keypoints.length; j += 1) {
+                        const point = keypoints[j];
+                        const x = point[0];
+                        const y = point[1];
+                        const target = point[3] ? point[3] : j;
+                        // draw if point in the box
+                        if (
+                            x > box[0] - box[2] / 2 &&
+                            x < box[0] + box[2] / 2 &&
+                            y > box[1] - box[3] / 2 &&
+                            y < box[1] + box[3] / 2
+                        ) {
+                            points.add(target);
+                        }
+
+                    }
+
+                    if (keypoints?.length === 17) {
+                        // nose to left eye
+                        if (points.has(0) && points.has(1)) {
+                            const color = getColor(0);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[0][0],
+                                y1: keypoints[0][1],
+                                x2: keypoints[1][0],
+                                y2: keypoints[1][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            });
+                            $group.appendChild(line);
+                        }
+                        // nose to right eye
+                        if (points.has(0) && points.has(2)) {
+                            const color = getColor(0);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[0][0],
+                                y1: keypoints[0][1],
+                                x2: keypoints[2][0],
+                                y2: keypoints[2][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left eye to left ear
+                        if (points.has(1) && points.has(3)) {
+                            const color = getColor(0);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[1][0],
+                                y1: keypoints[1][1],
+                                x2: keypoints[3][0],
+                                y2: keypoints[3][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right eye to right ear
+                        if (points.has(2) && points.has(4)) {
+                            const color = getColor(0);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[2][0],
+                                y1: keypoints[2][1],
+                                x2: keypoints[4][0],
+                                y2: keypoints[4][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left ear to left shoulder
+                        if (points.has(3) && points.has(5)) {
+                            const color = getColor(0);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[3][0],
+                                y1: keypoints[3][1],
+                                x2: keypoints[5][0],
+                                y2: keypoints[5][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right ear to right shoulder
+                        if (points.has(4) && points.has(6)) {
+                            const color = getColor(0);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[4][0],
+                                y1: keypoints[4][1],
+                                x2: keypoints[6][0],
+                                y2: keypoints[6][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left shoulder to right shoulder
+                        if (points.has(5) && points.has(6)) {
+                            const color = getColor(1);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[5][0],
+                                y1: keypoints[5][1],
+                                x2: keypoints[6][0],
+                                y2: keypoints[6][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left shoulder to left hip
+                        if (points.has(5) && points.has(11)) {
+                            const color = getColor(2);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[5][0],
+                                y1: keypoints[5][1],
+                                x2: keypoints[11][0],
+                                y2: keypoints[11][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right shoulder to right hip
+                        if (points.has(6) && points.has(12)) {
+                            const color = getColor(2);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[6][0],
+                                y1: keypoints[6][1],
+                                x2: keypoints[12][0],
+                                y2: keypoints[12][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left hip to right hip
+                        if (points.has(11) && points.has(12)) {
+                            const color = getColor(2);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[11][0],
+                                y1: keypoints[11][1],
+                                x2: keypoints[12][0],
+                                y2: keypoints[12][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left shoulder to left elbow
+                        if (points.has(5) && points.has(7)) {
+                            const color = getColor(1);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[5][0],
+                                y1: keypoints[5][1],
+                                x2: keypoints[7][0],
+                                y2: keypoints[7][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left elbow to left wrist
+                        if (points.has(7) && points.has(9)) {
+                            const color = getColor(1);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[7][0],
+                                y1: keypoints[7][1],
+                                x2: keypoints[9][0],
+                                y2: keypoints[9][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right shoulder to right elbow
+                        if (points.has(6) && points.has(8)) {
+                            const color = getColor(6);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[6][0],
+                                y1: keypoints[6][1],
+                                x2: keypoints[8][0],
+                                y2: keypoints[8][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right elbow to right wrist
+                        if (points.has(8) && points.has(10)) {
+                            const color = getColor(1);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[8][0],
+                                y1: keypoints[8][1],
+                                x2: keypoints[10][0],
+                                y2: keypoints[10][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left hip to left knee
+                        if (points.has(11) && points.has(13)) {
+                            const color = getColor(3);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[11][0],
+                                y1: keypoints[11][1],
+                                x2: keypoints[13][0],
+                                y2: keypoints[13][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // left knee to left ankle
+                        if (points.has(13) && points.has(15)) {
+                            const color = getColor(3);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[13][0],
+                                y1: keypoints[13][1],
+                                x2: keypoints[15][0],
+                                y2: keypoints[15][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right hip to right knee
+                        if (points.has(12) && points.has(14)) {
+                            const color = getColor(3);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[12][0],
+                                y1: keypoints[12][1],
+                                x2: keypoints[14][0],
+                                y2: keypoints[14][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                        // right knee to right ankle
+                        if (points.has(14) && points.has(16)) {
+                            const color = getColor(3);
+                            const line = createSVGElement('line', {
+                                x1: keypoints[14][0],
+                                y1: keypoints[14][1],
+                                x2: keypoints[16][0],
+                                y2: keypoints[16][1],
+                                stroke: color,
+                                'stroke-width': '2'
+                            })
+                            $group.appendChild(line);
+                        }
+                    }
+
+
+                    for (let j = 0; j < keypoints.length; j += 1) {
+                        const point = keypoints[j];
+                        const x = point[0];
+                        const y = point[1];
+                        const target = point[3] ? point[3] : j;
+                        // draw if point in the box
+                        if (
+                            x > box[0] - box[2] / 2 &&
+                            x < box[0] + box[2] / 2 &&
+                            y > box[1] - box[3] / 2 &&
+                            y < box[1] + box[3] / 2
+                        ) {
+                            const color = getColor(target);
+                            const circle = createSVGElement('circle', {
+                                cx: x,
+                                cy: y,
+                                r: 3,
+                                stroke: color,
+                                'stroke-width': '2',
+                                fill: color
+                            })
+                            $group.appendChild(circle);
+                        }
+
+                    }
+                });
+
             }
         };
 
