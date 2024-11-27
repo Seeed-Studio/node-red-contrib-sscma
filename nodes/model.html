@@ -83,26 +83,117 @@
         display: none;
     }
 
-    .sensecraft-button {
+    .preset-button {
         display: inline-flex;
         align-items: center;
         padding: 8px 12px;
         margin-right: 10px;
         border: none;
         border-radius: 4px;
-        background-color: rgb(140, 192, 31);
+        background-color: rgb(192, 31, 162);
         color: white;
         font-size: 14px;
         cursor: pointer;
         transition: background-color 0.3s;
     }
 
-    .sensecraft-button:hover {
-        background-color: rgb(120, 172, 21);
+    .preset-button:hover {
+        background-color: rgb(138, 17, 110);
     }
 
-    .sensecraft-button i {
+    .preset-button i {
         margin-right: 5px;
+    }
+
+    /* Modal Background */
+    #preset-models-modal {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        width: 350px;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1001;
+        animation: fadeIn 0.3s ease;
+    }
+
+    /* Close Button Styling */
+    #close-preset-modal {
+        display: block;
+        width: 100%;
+        margin-top: 20px;
+        padding: 10px;
+        text-align: center;
+        background-color: #007BFF;
+        color: white;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #close-preset-modal:hover {
+        background-color: #0056b3;
+    }
+
+    /* Modal Heading */
+    #preset-models-modal h4 {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+        color: #333;
+    }
+
+    /* Model List Styling */
+    #preset-model-list {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 0;
+    }
+
+    #preset-model-list li {
+        padding: 12px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    #preset-model-list li:hover {
+        background-color: #f0f0f0;
+        transform: scale(1.02);
+    }
+
+    #preset-model-list li a {
+        text-decoration: none;
+        color: #007BFF;
+        font-weight: bold;
+        display: block;
+    }
+
+    #preset-model-list li a:hover {
+        color: #0056b3;
+    }
+
+    /* Fade In Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
     }
 </style>
 
@@ -118,12 +209,13 @@
     <div class="form-row">
         <label><i class="fa fa-cog"></i> Model </label>
         <div class="node-input-model-container">
+            <button id="btn-preset" class="preset-button"><i class="fa fa-globe"></i> Preset </button>
+        </div>
+        <div class="node-input-model-container">
             <label for="upload-file" class="upload-button">
                 <i class="fa fa-upload"></i> Upload
             </label>
             <input type="file" id="upload-file" accept=".cvimodel" style="display:none;"> 
-            <span style="width:25px"></span>
-            <!-- <button id="btn-sensecraft" class="sensecraft-button"><i class="fa fa-globe"></i> SenseCraft</button> -->
         </div>
     </div>
     <div class="form-row" >
@@ -171,6 +263,13 @@
             <!-- Container for dynamically added inputs -->
         </div>
     </div>
+    <div id="preset-models-modal" style="display:none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: white; border: 1px solid #ccc; border-radius: 8px; padding: 10px; width: 300px;">
+        <h4>Select a Model</h4>
+        <ul id="preset-model-list" style="list-style: none; padding-left: 0;">
+            <!-- Dynamic model list will be added here -->
+        </ul>
+        <button id="close-preset-modal" style="margin-top: 10px; padding: 5px 10px;">Close</button>
+    </div>
 </script>
 
 <script type="text/javascript">
@@ -215,6 +314,10 @@
             var classesInput = document.getElementById('node-input-classes');
             var uploadFile = document.getElementById('upload-file');
             var clientInput = document.getElementById('node-input-client');
+            var presetButton = document.getElementById('btn-preset');
+            var modal = document.getElementById('preset-models-modal');
+            var presetList = document.getElementById('preset-model-list');
+            var closeModalButton = document.getElementById('close-preset-modal');
 
             var classes = classesInput.value.split(',');
             for (var i = 0; i < classes.length; i++) {
@@ -441,6 +544,80 @@
                 }
             }
 
+
+            // Function to fetch model list from the API
+            function fetchModelList() {
+                var host = window.location.hostname;
+                RED.nodes.eachConfig(function (c) {
+                    if (c.id === node.client) {
+                        host = c.host;
+                    }
+                });
+
+
+                if (host == "localhost" || host == "127.0.0.1") {
+                    host = window.location.hostname;
+                }
+
+
+                fetch('http://' + host + "/api/deviceMgr/getModelList")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.code === 0) {
+                            var modelList = data.data.list;
+                            presetList.innerHTML = '';  // Clear any existing items
+                            modelList.forEach(model => {
+                                var listItem = document.createElement('li');
+                                listItem.style.marginBottom = '10px';
+
+                                var modelLink = document.createElement('a');
+                                modelLink.href = "#";
+                                modelLink.innerHTML = model.name;  // Display the model name
+                                modelLink.addEventListener('click', function () {
+                                    // When a model is selected, populate the fields
+                                    document.getElementById('node-input-model').value = model.name;
+                                    document.getElementById('node-input-uri').value = model.file;
+
+                                    model.model_id = model.id;
+                                    model.model_name = model.name;
+
+                                    node.infoChanged = true;
+
+                                    node.modelInfo = JSON.stringify(model);
+
+                                    classesInput.value = model.classes.join(',');
+                                    var classes = classesInput.value.split(',');
+                                    classesContainer.innerHTML = "";
+                                    for (var i = 0; i < classes.length; i++) {
+                                        createClassInput(i, classes[i], true);
+                                    }
+                                    createClassInput(classes.length, "", true);
+
+                                    modal.style.display = 'none';  // Close the modal
+                                });
+
+                                listItem.appendChild(modelLink);
+                                presetList.appendChild(listItem);
+                            });
+                        } else {
+                            console.error('Failed to fetch model list');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching model list:', error));
+            }
+
+            // Show the modal with the list of models
+            presetButton.addEventListener('click', function () {
+                fetchModelList();
+                modal.style.display = 'block';  // Show the modal
+            });
+
+            // Close the modal when the "Close" button is clicked
+            closeModalButton.addEventListener('click', function () {
+                modal.style.display = 'none';  // Hide the modal
+            });
+
+
         },
         oneditsave: function () {
             const node = this;
@@ -476,7 +653,7 @@
                     .then(response => response.text())
                     .then(result => console.log(result))
                     .catch(error => console.log('error', error));
-            } else if (node.modelInfo && node.infoChanged) {
+            } else if (node.modelInfo || node.infoChanged) {
                 let info = JSON.parse(node.modelInfo);
                 const formData = new FormData();
                 info.classes = classesInput.value.split(',').map((c) => c.trim());
