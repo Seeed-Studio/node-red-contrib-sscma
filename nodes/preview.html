@@ -210,7 +210,7 @@
                     if (box?.length === 6) {
                         const [x, y, w, h, score, tar] = box;
                         const color = getColor(tar);
-                        const tarStr = data.labels?.[tar] || tar.toString();
+                        const tarStr = data.labels?.[i] ?? `NA-${tar}`;
                         const rect = createSVGElement('rect', {
                             x: x - w / 2,
                             y: y - h / 2,
@@ -250,7 +250,7 @@
             if (data?.classes) {
                 const rectHeight = data.resolution[1] / 16;
                 data.classes.forEach(([score, tar], i) => {
-                    const tarStr = data.labels?.[tar] || tar.toString();
+                    const tarStr = data.labels?.[i] ?? `NA-${tar}`;
                     const rectWidth = data.resolution[0] / data.classes.length;
                     const rect = createSVGElement('rect', {
                         x: rectWidth * i,
@@ -283,7 +283,7 @@
                     if (box?.length === 6) {
                         const [x, y, w, h, score, tar] = box;
                         const color = getColor(tar);
-                        const tarStr = data.labels?.[tar] || tar.toString();
+                        const tarStr = data.labels?.[i] ?? `NA-${tar}`;
                         const rect = createSVGElement('rect', {
                             x: x - w / 2,
                             y: y - h / 2,
@@ -658,7 +658,7 @@
                 type: "POST",
                 timeout: 500
             })
-        }, 2000);
+        }, 3000);
     })();
 
     RED.events.on('nodes:add', function (node) {
