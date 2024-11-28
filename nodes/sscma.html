@@ -8,8 +8,12 @@
         <input type="text" id="node-input-host" placeholder="localhost">
     </div>
     <div class="form-row">
-        <label for="node-input-port"><i class="fa fa-plug"></i> Port</label>
-        <input type="number" id="node-input-port" placeholder="1883">
+        <label for="node-input-mqttport"><i class="fa fa-plug"></i> MQTT Port</label>
+        <input type="number" id="node-input-mqttport" placeholder="1883">
+    </div>
+    <div class="form-row">
+        <label for="node-input-apiport"><i class="fa fa-plug"></i> API Port</label>
+        <input type="number" id="node-input-apiport" placeholder="80">
     </div>
     <div class="form-row">
         <label for="node-input-clientid"><i class="fa fa-id-badge"></i> Client ID</label>
@@ -31,7 +35,8 @@
         defaults: {
             name: { value: "" },
             host: { value: "localhost" },
-            port: { value: 1883 },
+            mqttport: { value: 1883 },
+            apiport: { value: 80 },
             clientid: { value: "recamera" },
             username: { value: "" },
             password: { value: "" }
@@ -39,7 +44,8 @@
         oneditprepare: function () {
             var node = this;
             $("#node-input-host").val(this.host);
-            $("#node-input-port").val(this.port);
+            $("#node-input-mqttport").val(this.mqttport);
+            $("#node-input-apiport").val(this.apiport);
             $("#node-input-clientid").val(this.clientid);
             $("#node-input-username").val(this.username);
             $("#node-input-password").val(this.password);
@@ -47,7 +53,8 @@
         oneditsave: function () {
             var node = this;
             this.host = $("#node-input-host").val();
-            this.port = $("#node-input-port").val();
+            this.mqttport = $("#node-input-mqttport").val();
+            this.apiport = $("#node-input-apiport").val();
             this.clientid = $("#node-input-clientid").val();
             this.username = $("#node-input-username").val();
             this.password = $("#node-input-password").val();

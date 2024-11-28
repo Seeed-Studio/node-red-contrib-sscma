@@ -48,10 +48,10 @@ module.exports = function (RED) {
 
         const node = this;
         node.users = {};
-        console.log(config);
         // Config node state
         node.host = config.host;
-        node.port = config.port;
+        node.mqttport = config.mqttport;
+        node.apiport = config.apiport;
         node.clientid = config.clientid;
         node.username = config.username;
         node.password = config.password;
@@ -61,7 +61,7 @@ module.exports = function (RED) {
         node.closing = false;
         node.options = {};
         node.queue = [];
-        node.brokerurl = "mqtt://" + node.host;
+        node.brokerurl = "mqtt://" + node.host + ":" + node.mqttport;
         node.api = "v0";
 
 
