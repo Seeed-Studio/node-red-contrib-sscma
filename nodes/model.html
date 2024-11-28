@@ -319,7 +319,7 @@
             var presetList = document.getElementById('preset-model-list');
             var closeModalButton = document.getElementById('close-preset-modal');
 
-            var classes = classesInput.value.split(',');
+            var classes = classesInput.value.split(',').filter(Boolean);
             for (var i = 0; i < classes.length; i++) {
                 createClassInput(i, classes[i], true);
             }
@@ -327,17 +327,19 @@
 
             function fetchModelInfo() {
                 var host = window.location.hostname;
+                var port = 80;
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
+                        console.log(c)
                         host = c.host;
+                        port = c.apiport;
                     }
                 })
 
                 if (host == "localhost" || host == "127.0.0.1") {
                     host = window.location.hostname;
                 }
-
-                fetch('http://' + host + "/api/deviceMgr/getModelInfo")
+                fetch(`http://${host}:${port}/api/deviceMgr/getModelInfo`)
                     .then(response => response.json())
                     .then(data => {
                         node.modelInfo = data.data.model_info;
@@ -493,6 +495,7 @@
                 node.infoChanged = true;
                 classesContainer.innerHTML = "";
                 var classes = classesInput.value.split(',');
+
                 for (var i = 0; i < classes.length; i++) {
                     createClassInput(i, classes[i], true);
                 }
@@ -548,9 +551,11 @@
             // Function to fetch model list from the API
             function fetchModelList() {
                 var host = window.location.hostname;
+                var port = 80;
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
                         host = c.host;
+                        port = c.apiport;
                     }
                 });
 
@@ -558,9 +563,8 @@
                 if (host == "localhost" || host == "127.0.0.1") {
                     host = window.location.hostname;
                 }
-
-
-                fetch('http://' + host + "/api/deviceMgr/getModelList")
+               
+                fetch(`http://${host}:${port}/api/deviceMgr/getModelList`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.code === 0) {
@@ -623,9 +627,11 @@
             const node = this;
             var classesInput = document.getElementById('node-input-classes');
             var host = window.location.hostname;
+            var port = 80;
             RED.nodes.eachConfig(function (c) {
                 if (c.id === node.client) {
                     host = c.host;
+                    port = c.apiport;
                 }
             })
 
@@ -646,7 +652,7 @@
                 formData.append('model_file', file);
                 formData.append('model_info', JSON.stringify(info));
 
-                fetch(`http://${host}/api/deviceMgr/uploadModel`, {
+                fetch(`http://${host}:${port}/api/deviceMgr/uploadModel`, {
                     method: 'POST',
                     body: formData
                 })
@@ -658,7 +664,7 @@
                 const formData = new FormData();
                 info.classes = classesInput.value.split(',').map((c) => c.trim());
                 formData.append('model_info', JSON.stringify(info));
-                fetch(`http://${host}/api/deviceMgr/uploadModel`, {
+                fetch(`http://${host}:${port}/api/deviceMgr/uploadModel`, {
                     method: 'POST',
                     body: formData
                 })

@@ -10,8 +10,8 @@ module.exports = function (RED) {
             trace: config.trace,
             debug: config.debug,
             counting: config.counting,
-            splitter: config.splitter.split(',').map((c) => parseInt(c.trim())),
-            labels: config.classes.split(',').map((c) => c.trim()),
+            splitter: config.splitter.split(',').filter(Boolean).map((c) => parseInt(c.trim())),
+            labels: config.classes.split(',').filter(Boolean).map((c) => c.trim()),
         }
 
         // if connect to preview, set preview to true
