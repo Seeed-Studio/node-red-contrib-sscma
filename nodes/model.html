@@ -330,9 +330,8 @@
                 var port = 80;
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
-                        console.log(c)
-                        host = c.host;
-                        port = c.apiport;
+                        host = c.host ? c.host : host;
+                        port = c.apiport ? c.apiport : port;
                     }
                 })
 
@@ -563,7 +562,7 @@
                 if (host == "localhost" || host == "127.0.0.1") {
                     host = window.location.hostname;
                 }
-               
+
                 fetch(`http://${host}:${port}/api/deviceMgr/getModelList`)
                     .then(response => response.json())
                     .then(data => {
@@ -630,8 +629,8 @@
             var port = 80;
             RED.nodes.eachConfig(function (c) {
                 if (c.id === node.client) {
-                    host = c.host;
-                    port = c.apiport;
+                    host = c.host ? c.host : host;
+                    port = c.apiport ? c.apiport : apiport;
                 }
             })
 
