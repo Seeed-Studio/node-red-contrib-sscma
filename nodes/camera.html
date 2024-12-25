@@ -1,83 +1,48 @@
 <script type="text/html" data-template-name="camera">
-    <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
-        <input type="text" id="node-input-name">
-    </div>
-    <div class="form-row">
-        <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
-        <input type="text" id="node-input-client">
-    </div>
-     <div class="form-row">
-        <label for="node-input-light"><i class="fa fa-lightbulb-o"></i> Light</label>
-        <input type="checkbox" id="node-input-light">
-    </div>
+  <div class="form-row">
+    <label for="node-input-name">
+      <i class="fa fa-tag"></i>
+      Label
+    </label>
+    <input type="text" id="node-input-name" />
+  </div>
+  <div class="form-row">
+    <label for="node-input-client">
+      <i class="fa fa-globe"></i>
+      Client
+    </label>
+    <input type="text" id="node-input-client" />
+  </div>
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('camera', {
-        category: 'sscma',
-        color: '#B29DDC',
-        defaults: {
-            option: { value: 0, required: true },
-            light: { value: false },
-            client: { type: "sscma", required: true, label: RED._("sscma") },
-        },
-        inputs: 0,
-        outputs: 1,
-        icon: "font-awesome/fa-camera",
-        label: function () {
-            return this.name || "camera";
-        },
-        button: {
-            toggle: "light",
-            onclick: function () {
-                const label = this.name || "camera";
-                var node = this;
-                $.ajax({
-                    url: `camera/${this.id}/${this.light ? "on" : "off"}`,
-                    type: 'post',
-                    success: function (data) {
-                        const historyEvent = {
-                            t: 'edit',
-                            node: node,
-                            changes: {
-                                light: !node.light
-                            },
-                            dirty: node.dirty,
-                            changed: node.changed
-                        };
-                        node.changed = true;
-                        node.dirty = true;
-                        RED.nodes.dirty(true);
-                        RED.history.push(historyEvent);
-                        RED.view.redraw();
-                        if (status == 200) {
-                            RED.notify(`Successfully ${resp}: ${label}`, "success");
-                        }
-                    },
-                    error: function (xhr, textStatus, errorThrown) {
-                        let message;
-                        switch (jqXHR.status) {
-                            case 404: message = "node not deployed"; break;
-                            case 0: message = "no response from server"; break;
-                            default: message = `unexpected error (${textStatus}) ${errorThrown}`;
-                        }
-                        RED.notify(`<strong>Error</strong>: ${message}`, "error");
-                    }
-                });
-            }
-        },
+  RED.nodes.registerType('camera', {
+    category: 'sscma',
+    color: '#B29DDC',
+    defaults: {
+      option: { value: 0, required: true },
+      client: { type: 'sscma', required: true, label: RED._('sscma') },
+    },
+    inputs: 0,
+    outputs: 1,
+    icon: 'font-awesome/fa-camera',
+    label: function () {
+      return this.name || 'camera';
+    },
+    oneditprepare: function () {},
+  });
 
-        oneditprepare: function () {
-
-        }
-    });
-
-    RED.events.on('nodes:add', function (node) {
-        const existingNodes = RED.nodes.filterNodes({ type: "camera" });
-        if (existingNodes.length > 1) {
-            RED.notify("This node can only be instantiated once.", "error");
-            RED.nodes.remove(node.id);
-        }
-    });
+  RED.events.on('nodes:add', function (node) {
+    const existingNodes = RED.nodes.filterNodes({ type: 'camera' });
+    if (existingNodes.length > 1) {
+      RED.notify('This node can only be instantiated once.', 'error');
+      RED.nodes.remove(node.id);
+    }
+  });
+</script>
+<script type="text/html" data-help-name="camera">
+  <p>
+    A simple node that converts the message payloads into all lower-case
+    characters
+  </p>
 </script>

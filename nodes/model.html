@@ -79,7 +79,7 @@
         margin-right: 5px;
     }
 
-    .upload-button+input[type="file"] {
+    .upload-button + input[type='file'] {
         display: none;
     }
 
@@ -130,7 +130,7 @@
         margin-top: 20px;
         padding: 10px;
         text-align: center;
-        background-color: #007BFF;
+        background-color: #007bff;
         color: white;
         font-size: 16px;
         border: none;
@@ -176,7 +176,7 @@
 
     #preset-model-list li a {
         text-decoration: none;
-        color: #007BFF;
+        color: #007bff;
         font-weight: bold;
         display: block;
     }
@@ -207,16 +207,19 @@
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
-        <label><i class="fa fa-cog"></i> Model </label>
-        <div class="node-input-model-container">
-            <button id="btn-preset" class="preset-button"><i class="fa fa-globe"></i> Preset </button>
-        </div>
-        <div class="node-input-model-container">
-            <label for="upload-file" class="upload-button">
-                <i class="fa fa-upload"></i> Upload
-            </label>
-            <input type="file" id="upload-file" accept=".cvimodel" style="display:none;"> 
-        </div>
+      <label><i class="fa fa-cog"></i> Model </label>
+      <div class="node-input-model-container">
+        <button id="btn-preset" class="preset-button"><i class="fa fa-globe"></i> Preset </button>
+      </div>
+      <div class="node-input-model-container">
+        <button id="btn-online" class="preset-button"><i class="fa fa-globe"></i> 云端 </button>
+      </div>
+      <div class="node-input-model-container">
+        <label for="upload-file" class="upload-button">
+          <i class="fa fa-upload"></i> Upload
+        </label>
+        <input type="file" id="upload-file" accept=".cvimodel" style="display:none;">
+      </div>
     </div>
     <div class="form-row" >
         <label for="node-input-model"><i class="fa fa-file"></i> Name</label>
@@ -273,31 +276,44 @@
 </script>
 
 <script type="text/javascript">
+    async function streamTransferFile(fileUrl) {
+        const response = await fetch(fileUrl);
+        const stream = response.body;
+
+        if (!stream) {
+            throw new Error('Failed to get stream');
+        }
+        const blob = new Blob([stream], {
+            type: response.headers.get('content-type') || '',
+        });
+        return blob;
+    }
     RED.nodes.registerType('model', {
         category: 'sscma',
         color: '#5A9FD1',
         defaults: {
-            name: { value: "" },
-            uri: { value: "" },
-            model: { value: "" },
+            name: { value: '' },
+            uri: { value: '' },
+            model: { value: '' },
             tscore: { value: 0.45 },
             tiou: { value: 0.25 },
             debug: { value: false },
             trace: { value: false },
             counting: { value: false },
-            classes: { value: "" },
-            splitter: { value: "0,0,0,0" },  // Array for x1, y1, x2, y2
-            client: { type: "sscma", required: true, label: RED._("sscma") }
+            classes: { value: '' },
+            splitter: { value: '0,0,0,0' }, // Array for x1, y1, x2, y2
+            client: { type: 'sscma', required: true, label: RED._('sscma') },
         },
         inputs: 1,
         outputs: 1,
-        icon: "font-awesome/fa-cube",
+        icon: 'font-awesome/fa-cube',
         label: function () {
-            return this.name || "model";
+            return this.name || 'model';
         },
         oneditprepare: function () {
             var node = this;
-            node.modelInfo = "";
+            node.modelInfo = '';
+            node.modelFile = null;
             node.infoChanged = false;
             var uriInput = document.getElementById('node-input-uri');
             var modelInput = document.getElementById('node-input-model');
@@ -309,21 +325,25 @@
             var tiouInput = document.getElementById('node-input-tiou');
             var tscoreValue = document.getElementById('tscore-value');
             var tiouValue = document.getElementById('tiou-value');
-            var splitterInput = document.getElementById('node-input-splitter');  // Hidden input for the array
-            var classesContainer = document.getElementById('node-input-classes-container');
+            var splitterInput = document.getElementById('node-input-splitter'); // Hidden input for the array
+            var classesContainer = document.getElementById(
+                'node-input-classes-container',
+            );
             var classesInput = document.getElementById('node-input-classes');
             var uploadFile = document.getElementById('upload-file');
             var clientInput = document.getElementById('node-input-client');
             var presetButton = document.getElementById('btn-preset');
             var modal = document.getElementById('preset-models-modal');
             var presetList = document.getElementById('preset-model-list');
-            var closeModalButton = document.getElementById('close-preset-modal');
+            var closeModalButton =
+                document.getElementById('close-preset-modal');
+            const $classesContainer = $('#node-input-classes-container');
 
             var classes = classesInput.value.split(',').filter(Boolean);
             for (var i = 0; i < classes.length; i++) {
                 createClassInput(i, classes[i], true);
             }
-            createClassInput(classes.length, "", true);
+            createClassInput(classes.length, '', true);
 
             function fetchModelInfo() {
                 var host = window.location.hostname;
@@ -333,24 +353,24 @@
                         host = c.host ? c.host : host;
                         port = c.apiport ? c.apiport : port;
                     }
-                })
+                });
 
-                if (host == "localhost" || host == "127.0.0.1") {
+                if (host == 'localhost' || host == '127.0.0.1') {
                     host = window.location.hostname;
                 }
                 fetch(`http://${host}:${port}/api/deviceMgr/getModelInfo`)
-                    .then(response => response.json())
-                    .then(data => {
+                    .then((response) => response.json())
+                    .then((data) => {
                         node.modelInfo = data.data.model_info;
                         let model = JSON.parse(data.data.model_info);
                         modelInput.value = model.model_name;
                         classesInput.value = model.classes.join(',');
                         var classes = classesInput.value.split(',');
-                        classesContainer.innerHTML = "";
+                        classesContainer.innerHTML = '';
                         for (var i = 0; i < classes.length; i++) {
                             createClassInput(i, classes[i], true);
                         }
-                        createClassInput(classes.length, "", true);
+                        createClassInput(classes.length, '', true);
                     });
             }
 
@@ -358,16 +378,17 @@
 
             uploadFile.addEventListener('change', function () {
                 var file = this.files[0];
-                uriInput.value = "";
-                classesInput.value = "";
+                uriInput.value = '';
+                classesInput.value = '';
                 modelInput.value = file.name;
-                classesContainer.innerHTML = "";
-                createClassInput(0, "", true);
+                classesContainer.innerHTML = '';
+                createClassInput(0, '', true);
                 RED.nodes.dirty(true);
             });
 
             var isDrawing = false;
-            var startX = 0, startY = 0;
+            var startX = 0,
+                startY = 0;
 
             tscoreValue.innerText = tscoreInput.value;
             tiouValue.innerText = tiouInput.value;
@@ -389,9 +410,11 @@
             // Update canvas for line drawing
             function updateCanvas() {
                 if (!countingInput.checked) {
-                    document.getElementById('splitter-row').style.display = 'none';
+                    document.getElementById('splitter-row').style.display =
+                        'none';
                 } else {
-                    document.getElementById('splitter-row').style.display = 'block';
+                    document.getElementById('splitter-row').style.display =
+                        'block';
                     let line = splitterInput.value.split(',').map(Number);
                     var canvasWidth = splitterCanvas.width;
                     var canvasHeight = splitterCanvas.height;
@@ -405,7 +428,14 @@
             }
 
             // Extend line to canvas edges
-            function extendLineToEdges(x1, y1, x2, y2, canvasWidth, canvasHeight) {
+            function extendLineToEdges(
+                x1,
+                y1,
+                x2,
+                y2,
+                canvasWidth,
+                canvasHeight,
+            ) {
                 var dx = x2 - x1;
                 var dy = y2 - y1;
 
@@ -434,7 +464,12 @@
                     xEnd = (yEnd - intercept) / slope;
                 }
 
-                return { x1: parseInt(xStart), y1: parseInt(yStart), x2: parseInt(xEnd), y2: parseInt(yEnd) };
+                return {
+                    x1: parseInt(xStart),
+                    y1: parseInt(yStart),
+                    x2: parseInt(xEnd),
+                    y2: parseInt(yEnd),
+                };
             }
 
             splitterCanvas.addEventListener('mousedown', function (e) {
@@ -442,7 +477,7 @@
                 var rect = splitterCanvas.getBoundingClientRect();
                 startX = e.clientX - rect.left;
                 startY = e.clientY - rect.top;
-                splitter = [startX, startY, 0, 0];  // Store start coordinates in the array
+                splitter = [startX, startY, 0, 0]; // Store start coordinates in the array
             });
 
             splitterCanvas.addEventListener('mouseup', function (e) {
@@ -451,14 +486,26 @@
                     var rect = splitterCanvas.getBoundingClientRect();
                     var endX = e.clientX - rect.left;
                     var endY = e.clientY - rect.top;
-                    splitter[2] = endX;  // Update end coordinates in the array
+                    splitter[2] = endX; // Update end coordinates in the array
                     splitter[3] = endY;
 
                     var canvasWidth = splitterCanvas.width;
                     var canvasHeight = splitterCanvas.height;
-                    var extendedLine = extendLineToEdges(startX, startY, endX, endY, canvasWidth, canvasHeight);
+                    var extendedLine = extendLineToEdges(
+                        startX,
+                        startY,
+                        endX,
+                        endY,
+                        canvasWidth,
+                        canvasHeight,
+                    );
 
-                    splitter = [+extendedLine.x1, +extendedLine.y1, +extendedLine.x2, +extendedLine.y2];  // Update array with extended coordinates
+                    splitter = [
+                        +extendedLine.x1,
+                        +extendedLine.y1,
+                        +extendedLine.x2,
+                        +extendedLine.y2,
+                    ]; // Update array with extended coordinates
 
                     // Reflect array in hidden input
                     splitterInput.value = splitter;
@@ -492,60 +539,71 @@
 
             classesInput.addEventListener('input', function () {
                 node.infoChanged = true;
-                classesContainer.innerHTML = "";
+                classesContainer.innerHTML = '';
                 var classes = classesInput.value.split(',');
 
                 for (var i = 0; i < classes.length; i++) {
                     createClassInput(i, classes[i], true);
                 }
-                createClassInput(classes.length, "", true);
-            })
+                createClassInput(classes.length, '', true);
+            });
 
             clientInput.addEventListener('input', function () {
                 fetchModelInfo();
-            })
+            });
 
-            // Create class input with numbering
             function createClassInput(number, value, editable) {
-                var wrapper = document.createElement('div');
-                wrapper.className = 'node-input-class-wrapper';
-
-                var numberLabel = document.createElement('div');
-                numberLabel.className = 'node-input-class-number';
-                numberLabel.textContent = number;
-
-                var input = document.createElement('input');
-                input.type = 'text';
-                input.placeholder = 'Enter a class label';
-                input.className = 'node-input-class';
-                input.disabled = editable ? false : true;
-                input.addEventListener('input', handleClassInput);
-
-                if (value) {
-                    input.value = value;
-                }
-                wrapper.appendChild(numberLabel);
-                wrapper.appendChild(input);
-                classesContainer.appendChild(wrapper);
-                return input;
-            }
-
-            function handleClassInput(event) {
-                var inputs = classesContainer.querySelectorAll('.node-input-class');
-                node.infoChanged = true;
-                var values = Array.from(inputs).map(function (input) {
-                    return input.value.trim();
-                }).filter(function (value) {
-                    return value !== "";
+                // 使用jQuery创建元素并设置属性
+                const $wrapper = $('<div>', {
+                    class: 'node-input-class-wrapper',
                 });
 
-                classesInput.value = values;
+                const $numberLabel = $('<div>', {
+                    class: 'node-input-class-number',
+                    text: number,
+                });
 
-                if (event.target === inputs[inputs.length - 1] && event.target.value.trim() !== "") {
-                    createClassInput(inputs.length, "", true); // Create a new input with updated numbering
+                const $input = $('<input>', {
+                    type: 'text',
+                    class: 'node-input-class',
+                    placeholder: 'Enter a class label',
+                    disabled: !editable,
+                    value: value || '',
+                    on: {
+                        input: handleClassInput,
+                    },
+                });
+
+                // 使用jQuery的链式操作组装DOM
+                $wrapper
+                    .append($numberLabel)
+                    .append($input)
+                    .appendTo($classesContainer);
+
+                return $input;
+            }
+            function handleClassInput(event) {
+                if (!$classesContainer.length) return;
+                // 获取所有class输入框
+                const $inputs = $classesContainer.find('.node-input-class');
+                if (!$inputs.length) return;
+                node.infoChanged = true;
+                const values = $inputs
+                    .map(function () {
+                        return $(this).val().trim();
+                    })
+                    .get()
+                    .filter(Boolean);
+
+                $('#node-input-classes').val(values.join(','));
+
+                const $lastInput = $inputs.last();
+                const isLastInput = event.target === $lastInput[0];
+                const hasValue = $(event.target).val().trim() !== '';
+                if (isLastInput && hasValue) {
+                    createClassInput($inputs.length, '', true); // Create a new input with updated numbering
                 }
             }
-
 
             // Function to fetch model list from the API
             function fetchModelList() {
@@ -558,46 +616,66 @@
                     }
                 });
 
-
-                if (host == "localhost" || host == "127.0.0.1") {
+                if (host == 'localhost' || host == '127.0.0.1') {
                     host = window.location.hostname;
                 }
 
                 fetch(`http://${host}:${port}/api/deviceMgr/getModelList`)
-                    .then(response => response.json())
-                    .then(data => {
+                    .then((response) => response.json())
+                    .then((data) => {
                         if (data.code === 0) {
                             var modelList = data.data.list;
-                            presetList.innerHTML = '';  // Clear any existing items
-                            modelList.forEach(model => {
+                            presetList.innerHTML = ''; // Clear any existing items
+                            modelList.forEach((model) => {
                                 var listItem = document.createElement('li');
                                 listItem.style.marginBottom = '10px';
 
                                 var modelLink = document.createElement('a');
-                                modelLink.href = "#";
-                                modelLink.innerHTML = model.name;  // Display the model name
-                                modelLink.addEventListener('click', function () {
-                                    // When a model is selected, populate the fields
-                                    document.getElementById('node-input-model').value = model.name;
-                                    document.getElementById('node-input-uri').value = model.file;
+                                modelLink.href = '#';
+                                modelLink.innerHTML = model.name; // Display the model name
+                                modelLink.addEventListener(
+                                    'click',
+                                    function () {
+                                        // When a model is selected, populate the fields
+                                        document.getElementById(
+                                            'node-input-model',
+                                        ).value = model.name;
+                                        document.getElementById(
+                                            'node-input-uri',
+                                        ).value = model.file;
 
-                                    model.model_id = model.id;
-                                    model.model_name = model.name;
+                                        model.model_id = model.id;
+                                        model.model_name = model.name;
 
-                                    node.infoChanged = true;
+                                        node.infoChanged = true;
 
-                                    node.modelInfo = JSON.stringify(model);
+                                        node.modelInfo = JSON.stringify(model);
 
-                                    classesInput.value = model.classes.join(',');
-                                    var classes = classesInput.value.split(',');
-                                    classesContainer.innerHTML = "";
-                                    for (var i = 0; i < classes.length; i++) {
-                                        createClassInput(i, classes[i], true);
-                                    }
-                                    createClassInput(classes.length, "", true);
+                                        classesInput.value =
+                                            model.classes.join(',');
+                                        var classes =
+                                            classesInput.value.split(',');
+                                        classesContainer.innerHTML = '';
+                                        for (
+                                            var i = 0;
+                                            i < classes.length;
+                                            i++
+                                        ) {
+                                            createClassInput(
+                                                i,
+                                                classes[i],
+                                                true,
+                                            );
+                                        }
+                                        createClassInput(
+                                            classes.length,
+                                            '',
+                                            true,
+                                        );
 
-                                    modal.style.display = 'none';  // Close the modal
-                                });
+                                        modal.style.display = 'none'; // Close the modal
+                                    },
+                                );
 
                                 listItem.appendChild(modelLink);
                                 presetList.appendChild(listItem);
@@ -606,21 +684,118 @@
                             console.error('Failed to fetch model list');
                         }
                     })
-                    .catch(error => console.error('Error fetching model list:', error));
+                    .catch((error) =>
+                        console.error('Error fetching model list:', error),
+                    );
             }
 
             // Show the modal with the list of models
             presetButton.addEventListener('click', function () {
                 fetchModelList();
-                modal.style.display = 'block';  // Show the modal
+                modal.style.display = 'block'; // Show the modal
+            });
+            async function fetchOnlineModelList() {
+                try {
+                    const RE_CAMERA_UNIFORM_TYPE = '40';
+                    const baseUrl = 'https://sensecraft.seeed.cc/aiserverapi';
+                    const url = `${baseUrl}/model/list_model`;
+                    const params = new URLSearchParams({
+                        appid: '131',
+                        uniform_type: RE_CAMERA_UNIFORM_TYPE,
+                        length: '10',
+                        page: '1',
+                        get_recommend: '0',
+                    });
+
+                    const res = await fetch(`${url}?${params}`);
+                    const {
+                        data: { list: modelList },
+                    } = await res.json();
+
+                    if (!Array.isArray(modelList)) {
+                        throw new Error('Model list is not an array');
+                    }
+
+                    const $list = $('#preset-model-list');
+                    const $modal = $('#preset-models-modal');
+
+                    if (!$list.length || !$modal.length) {
+                        throw new Error('Required DOM elements not found');
+                    }
+
+                    $list.empty().append(
+                        modelList.map((model) =>
+                            $('<li>')
+                                .append(
+                                    $('<a>', { href: '#', text: model.name }),
+                                )
+                                .on('click', async () => {
+                                    try {
+                                        node.name = model.name;
+                                        $('#node-input-model').val(model.name);
+                                        const applyModelParams =
+                                            new URLSearchParams({
+                                                uniform_type: '36',
+                                                model_id: model.id,
+                                            });
+                                        const applyModelResponse = await fetch(
+                                            `${baseUrl}/model/apply_model?${applyModelParams}`,
+                                        );
+                                        const {
+                                            data: { model_snapshot },
+                                        } = await applyModelResponse.json();
+                                        const file = await streamTransferFile(
+                                            model_snapshot.arguments.url,
+                                        );
+                                        node.modelFile = file;
+                                        node.modelInfo =
+                                            JSON.stringify(model_snapshot);
+                                        const classes =
+                                            model_snapshot.classes ?? [];
+                                        $('#node-input-classes').val(
+                                            classes.join(','),
+                                        );
+                                        $classesContainer.empty();
+                                        for (
+                                            var i = 0;
+                                            i < classes.length;
+                                            i++
+                                        ) {
+                                            createClassInput(
+                                                i,
+                                                classes[i],
+                                                true,
+                                            );
+                                        }
+                                        createClassInput(
+                                            classes.length,
+                                            '',
+                                            true,
+                                        );
+                                        $modal.hide();
+                                    } catch (error) {
+                                        console.error('Error:', error);
+                                    }
+                                }),
+                        ),
+                    );
+
+                    $modal.show();
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+            $('#btn-online').click(function () {
+                fetchOnlineModelList();
+                $('#close-preset-modal').click(function () {
+                    $('#preset-models-modal').hide();
+                });
             });
 
             // Close the modal when the "Close" button is clicked
             closeModalButton.addEventListener('click', function () {
-                modal.style.display = 'none';  // Hide the modal
+                modal.style.display = 'none'; // Hide the modal
             });
-
-
         },
         oneditsave: function () {
             const node = this;
@@ -630,11 +805,11 @@
             RED.nodes.eachConfig(function (c) {
                 if (c.id === node.client) {
                     host = c.host ? c.host : host;
-                    port = c.apiport ? c.apiport : apiport;
+                    port = c.apiport ? c.apiport : port;
                 }
-            })
+            });
 
-            if (host == "localhost" || host == "127.0.0.1") {
+            if (host == 'localhost' || host == '127.0.0.1') {
                 host = window.location.hostname;
             }
 
@@ -642,10 +817,10 @@
             if (uploadFile.files.length > 0) {
                 var file = uploadFile.files[0];
                 var info = {
-                    model_id: "0",
+                    model_id: '0',
                     model_name: file.name,
                     classes: classesInput.value.split(',').map((c) => c.trim()),
-                }
+                };
 
                 const formData = new FormData();
                 formData.append('model_file', file);
@@ -653,31 +828,37 @@
 
                 fetch(`http://${host}:${port}/api/deviceMgr/uploadModel`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
                 })
-                    .then(response => response.text())
-                    .then(result => console.log(result))
-                    .catch(error => console.log('error', error));
+                    .then((response) => response.text())
+                    .then((result) => console.log(result))
+                    .catch((error) => console.log('error', error));
             } else if (node.modelInfo || node.infoChanged) {
                 let info = JSON.parse(node.modelInfo);
                 const formData = new FormData();
-                info.classes = classesInput.value.split(',').map((c) => c.trim());
+                if (node.modelFile) {
+                    formData.append('model_file', node.modelFile);
+                    node.modelFile = null;
+                }
+                info.classes = classesInput.value
+                    .split(',')
+                    .map((c) => c.trim());
                 formData.append('model_info', JSON.stringify(info));
                 fetch(`http://${host}:${port}/api/deviceMgr/uploadModel`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
                 })
-                    .then(response => response.text())
-                    .then(result => console.log(result))
-                    .catch(error => console.log('error', error));
+                    .then((response) => response.text())
+                    .then((result) => console.log(result))
+                    .catch((error) => console.log('error', error));
             }
-        }
+        },
     });
 
     RED.events.on('nodes:add', function (node) {
-        const existingNodes = RED.nodes.filterNodes({ type: "model" });
+        const existingNodes = RED.nodes.filterNodes({ type: 'model' });
         if (existingNodes.length > 1) {
-            RED.notify("This node can only be instantiated once.", "error");
+            RED.notify('This node can only be instantiated once.', 'error');
             RED.nodes.remove(node.id);
         }
     });

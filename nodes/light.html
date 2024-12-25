@@ -1,0 +1,80 @@
+<script type="text/html" data-template-name="light">
+  <div class="form-row">
+    <label for="node-input-light">
+      <i class="fa fa-lightbulb-o"></i>
+      Light
+    </label>
+    <input type="checkbox" id="node-input-light" />
+  </div>
+</script>
+<script type="text/javascript">
+  async function onClickLight() {
+    const label = this.name || 'light';
+    const node = this;
+    try {
+      const data = await fetch(
+        `/camera/${this.id}/${this.light ? 'on' : 'off'}`,
+        {
+          method: 'POST',
+        },
+      );
+      if (data.ok) {
+        const historyEvent = {
+          t: 'edit',
+          node: node,
+          changes: {
+            light: !node.light,
+          },
+          dirty: node.dirty,
+          changed: node.changed,
+        };
+        node.changed = true;
+        node.dirty = true;
+        RED.nodes.dirty(true);
+        RED.history.push(historyEvent);
+        RED.view.redraw();
+        RED.notify(
+          `Successfully ${this.light ? 'on' : 'off'}: ${label}`,
+          'success',
+        );
+      } else {
+        let message;
+        console.error(data);
+        switch (data.status) {
+          case 404:
+            message = 'node not deployed';
+            break;
+          case 0:
+            message = 'no response from server';
+            break;
+          default:
+            message = `unexpected error (${await data.text()})`;
+        }
+        RED.notify(`<strong>Error</strong>: ${message}`, 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      RED.notify(`<strong>Error</strong>: ${error.message}`, 'error');
+    }
+  }
+
+  RED.nodes.registerType('light', {
+    category: 'sscma',
+    color: '#B29DDC',
+    defaults: {
+      light: { value: false },
+    },
+    inputs: 1,
+    outputs: 0,
+    icon: 'font-awesome/fa-lightbulb-o',
+    label: function () {
+      return this.name || 'light';
+    },
+    button: {
+      toggle: 'light',
+      onclick: onClickLight,
+    },
+
+    oneditprepare: function () {},
+  });
+</script>
