@@ -1,16 +1,16 @@
 module.exports = function (RED) {
     "use strict";
-    const { MsgType } = require('./constants');
+    const { MsgType } = require("./constants");
     var mqtt = require("mqtt");
 
     function updateStatus(node, allNodes) {
-        let setStatus = setStatusDisconnected
+        let setStatus = setStatusDisconnected;
         if (node.connecting) {
-            setStatus = setStatusConnecting
+            setStatus = setStatusConnecting;
         } else if (node.connected) {
-            setStatus = setStatusConnected
+            setStatus = setStatusConnected;
         }
-        setStatus(node, allNodes)
+        setStatus(node, allNodes);
     }
 
     function setStatusDisconnected(node, allNodes) {
@@ -64,7 +64,6 @@ module.exports = function (RED) {
         node.brokerurl = "mqtt://" + node.host + ":" + node.mqttport;
         node.api = "v0";
 
-
         node.register = function (Node) {
             node.users[Node.id] = Node;
             if (Object.keys(node.users).length === 1) {
@@ -76,12 +75,13 @@ module.exports = function (RED) {
             let dependencies = [];
             RED.nodes.eachNode(function (n) {
                 if (n.wires != undefined) {
-                    n.wires.forEach(wires => {
+                    n.wires.forEach((wires) => {
                         var id = n.id;
-                        if (Node.id.includes("-")) { // it is a subflow node
-                            var subflow = RED.nodes.getNode(Node.z)
+                        if (Node.id.includes("-")) {
+                            // it is a subflow node
+                            var subflow = RED.nodes.getNode(Node.z);
                             if (subflow.node.type === "subflow:" + n.z) {
-                                id = Node.z + "-" + n.id
+                                id = Node.z + "-" + n.id;
                             }
                             if (wires.includes(Node.id.split("-")[1]) && !dependencies.includes(id) && n.client == node.id && !n.d) {
                                 dependencies.push(id);
@@ -96,30 +96,30 @@ module.exports = function (RED) {
             });
             // only add wires if it is a sscma node
             let dependents = [];
-            Node.wires.forEach(wires => {
-                wires.forEach(wire => {
+            Node.wires.forEach((wires) => {
+                wires.forEach((wire) => {
                     RED.nodes.eachNode(function (n) {
                         var id = n.id;
-                        if (Node.id.includes("-")) { // it is a subflow node
-                            var subflow = RED.nodes.getNode(Node.z)
+                        if (Node.id.includes("-")) {
+                            // it is a subflow node
+                            var subflow = RED.nodes.getNode(Node.z);
                             if (subflow.node.type === "subflow:" + n.z) {
-                                id = Node.z + "-" + n.id
+                                id = Node.z + "-" + n.id;
                             }
                         }
                         if (id == wire && !dependents.includes(id) && n.client == node.id && !n.d) {
                             dependents.push(id);
                         }
-                    })
-
+                    });
                 });
             });
 
             const create = {
-                "type": Node.type,
-                "config": Node.config,
-                "dependencies": dependencies,
-                "dependents": dependents,
-            }
+                type: Node.type,
+                config: Node.config,
+                dependencies: dependencies,
+                dependents: dependents,
+            };
             Node.code = -1;
             Node.status({ fill: "yellow", shape: "ring", text: "node-red:common.status.connecting" });
             node.request(Node.id, "create", create);
@@ -127,8 +127,8 @@ module.exports = function (RED) {
 
         node.deregister = function (Node, done, autoDisconnect) {
             const destroy = {
-                "type": Node.type,
-            }
+                type: Node.type,
+            };
             node.request(Node.id, "destroy", destroy, done);
             delete node.users[Node.id];
             if (autoDisconnect && !node.closing && node.connected && Object.keys(node.users).length === 0) {
@@ -140,7 +140,7 @@ module.exports = function (RED) {
 
         node.canConnect = function () {
             return !node.connected && !node.connecting;
-        }
+        };
 
         node.connect = function (callback) {
             if (node.canConnect()) {
@@ -157,7 +157,7 @@ module.exports = function (RED) {
                     node.client = mqtt.connect(node.brokerurl, node.options);
                     node.client.setMaxListeners(0);
                     let callbackDone = false;
-                    node.client.on('connect', function (connack) {
+                    node.client.on("connect", function (connack) {
                         node.closing = false;
                         node.connecting = false;
                         node.connected = true;
@@ -171,14 +171,16 @@ module.exports = function (RED) {
                             if (node.subscriptions.hasOwnProperty(s)) {
                                 for (var r in node.subscriptions[s]) {
                                     if (node.subscriptions[s].hasOwnProperty(r)) {
-                                        node.subscribe(node.subscriptions[s][r])
+                                        node.subscribe(node.subscriptions[s][r]);
                                     }
                                 }
                             }
                         }
-                        const topic = "sscma/" + node.api + "/" + node.clientid + "/node/out/+"
+                        const topic = "sscma/" + node.api + "/" + node.clientid + "/node/out/+";
                         node.client.subscribe(topic, function (err) {
-                            if (err) { console.log(err); }
+                            if (err) {
+                                console.log(err);
+                            }
                         });
                         // TODO: send connection acknowledgement to server
                     });
@@ -186,7 +188,7 @@ module.exports = function (RED) {
                         const id = topic.split("/").slice(-1)[0];
                         if (node.users[id]) {
                             try {
-                                const payload = JSON.parse(message)
+                                const payload = JSON.parse(message);
 
                                 if (payload.code == 0) {
                                     if (node.users[id].code != 0) {
@@ -195,12 +197,11 @@ module.exports = function (RED) {
                                 } else {
                                     node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
                                 }
-                                node.users[id].code = payload.code
+                                node.users[id].code = payload.code;
                                 var msg = {
-                                    payload: payload
+                                    payload: payload,
                                 };
                                 node.users[id].message(msg);
-
                             } catch (err) {
                                 console.log("Error parsing message: " + err);
                             }
@@ -213,7 +214,7 @@ module.exports = function (RED) {
                         node.connected = false;
                         setStatusDisconnected(node, true);
                     });
-                    node.client.on('close', function () {
+                    node.client.on("close", function () {
                         if (node.connected) {
                             node.connected = false;
                             setStatusDisconnected(node, true);
@@ -222,27 +223,33 @@ module.exports = function (RED) {
                             setStatusConnecting(node, true);
                         }
                     });
-                    node.client.on('error', function (err) {
+                    node.client.on("error", function (err) {
                         console.log(err);
                     });
                 } catch (err) {
                     console.log(err);
                 }
             }
-        }
+        };
 
         node.disconnect = function (callback) {
             const _callback = function () {
                 if (node.connected || node.connecting) {
                     setStatusDisconnected(node, true);
                 }
-                if (node.client) { node.client.removeAllListeners(); }
+                if (node.client) {
+                    node.client.removeAllListeners();
+                }
                 node.connecting = false;
                 node.connected = false;
                 callback && typeof callback == "function" && callback();
             };
-            if (!node.client) { return _callback(); }
-            if (node.closing) { return _callback(); }
+            if (!node.client) {
+                return _callback();
+            }
+            if (node.closing) {
+                return _callback();
+            }
 
             /**
              * Call end and wait for the client to end (or timeout)
@@ -263,44 +270,47 @@ module.exports = function (RED) {
                         }, ms);
                         client.end(() => {
                             clearTimeout(t);
-                            resolve()
+                            resolve();
                         });
                     }
                 });
             };
-            waitEnd(node.client, 2000).then(() => {
-                _callback();
-            }).catch((e) => {
-                _callback();
-            })
-
-        }
+            waitEnd(node.client, 2000)
+                .then(() => {
+                    _callback();
+                })
+                .catch((e) => {
+                    _callback();
+                });
+        };
 
         node.request = function (id, cmd, data, done) {
             const topic = "sscma/" + node.api + "/" + node.clientid + "/node/in/" + id;
             const msg = {
                 name: cmd,
                 type: MsgType.REQUEST,
-                data: data
+                data: data,
             };
             const options = {
-                qos: 0
+                qos: 0,
             };
             // console.log("Sending request: " + topic + " " + JSON.stringify(msg));
             node.client.publish(topic, JSON.stringify(msg), options, function (err) {
                 if (err) {
-                    console.log("Error sending request: " + err);
+                    console.error("Error sending request: " + err);
                 } else {
-                    if (done) { done(); }
+                    if (done) {
+                        done();
+                    }
                 }
             });
-        }
+        };
 
-        node.on('close', function (done) {
+        node.on("close", function (done) {
             node.disconnect(function () {
                 done();
             });
         });
     }
     RED.nodes.registerType("sscma", SSCMANode);
-}
+};
