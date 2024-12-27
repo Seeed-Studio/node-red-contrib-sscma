@@ -10,30 +10,35 @@ module.exports = function (RED) {
             trace: config.trace,
             debug: config.debug,
             counting: config.counting,
-            splitter: config.splitter.split(',').filter(Boolean).map((c) => parseInt(c.trim())),
-            labels: config.classes.split(',').filter(Boolean).map((c) => c.trim()),
-        }
+            splitter: config.splitter
+                .split(",")
+                .filter(Boolean)
+                .map((c) => parseInt(c.trim())),
+            labels: config.classes
+                .split(",")
+                .filter(Boolean)
+                .map((c) => c.trim()),
+        };
 
         // if connect to preview, set preview to true
-        node.wires.forEach(wires => {
-            wires.forEach(wire => {
+        node.wires.forEach((wires) => {
+            wires.forEach((wire) => {
                 RED.nodes.eachNode(function (n) {
                     if (n.id === wire && n.type === "preview" && !n.d) {
-                        node.config.debug = true
+                        node.config.debug = true;
                     }
                 });
             });
         });
 
-
         node.message = function (msg) {
-            //console.log(msg.payload.name);
+            // console.log(msg.payload.name);
             node.send(msg);
-        }
+        };
         if (node.client) {
             node.client.register(node);
         }
-        node.on('close', function (removed, done) {
+        node.on("close", function (removed, done) {
             if (node.client) {
                 node.client.deregister(node, done, removed);
                 node.client = null;
@@ -43,4 +48,4 @@ module.exports = function (RED) {
     }
 
     RED.nodes.registerType("model", ModelNode);
-}
+};

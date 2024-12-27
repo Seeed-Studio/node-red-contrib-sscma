@@ -32,7 +32,7 @@ module.exports = function (RED) {
         request(node.light ? "on" : "off");
         node.on("input", function (msg) {
             let state = "off";
-            if (msg.payload === "on" || !!msg.payload) {
+            if (msg.payload === "on" || (!!msg.payload && state !== "off")) {
                 state = "on";
             }
             node.light = state === "on";

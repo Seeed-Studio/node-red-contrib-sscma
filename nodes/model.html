@@ -61,7 +61,6 @@
         display: inline-flex;
         align-items: center;
         padding: 8px 12px;
-        margin-right: 10px;
         border: none;
         border-radius: 4px;
         background-color: #2980b9;
@@ -90,15 +89,21 @@
         margin-right: 10px;
         border: none;
         border-radius: 4px;
-        background-color: rgb(192, 31, 162);
         color: white;
         font-size: 14px;
         cursor: pointer;
         transition: background-color 0.3s;
     }
 
+    .preset-button-cube {
+        background-color: #20c098;
+    }
+    .preset-button-cloud {
+        background-color: #8cc020;
+    }
+
     .preset-button:hover {
-        background-color: rgb(138, 17, 110);
+        opacity: 0.6;
     }
 
     .preset-button i {
@@ -207,12 +212,12 @@
         <input type="text" id="node-input-client">
     </div>
     <div class="form-row">
-      <label><i class="fa fa-cog"></i> Model </label>
+      <label><i class="fa fa-cog"></i> Choose Model From </label>
       <div class="node-input-model-container">
-        <button id="btn-preset" class="preset-button"><i class="fa fa-globe"></i> Preset </button>
+        <button id="btn-preset" class="preset-button preset-button-cube"><i class="fa fa-cube"></i> On Device </button>
       </div>
       <div class="node-input-model-container">
-        <button id="btn-online" class="preset-button"><i class="fa fa-globe"></i> 云端 </button>
+        <button id="btn-online" class="preset-button preset-button-cloud"><i class="fa fa-cloud"></i> SenseCraft Zoo </button>
       </div>
       <div class="node-input-model-container">
         <label for="upload-file" class="upload-button">
@@ -222,7 +227,7 @@
       </div>
     </div>
     <div class="form-row" >
-        <label for="node-input-model"><i class="fa fa-file"></i> Name</label>
+        <label for="node-input-model"><i class="fa fa-file"></i> Model Name</label>
         <input type="text" id="node-input-model" readonly>
     </div>
     <div class="form-row" style="display:none;">
@@ -240,7 +245,7 @@
         <span id="tiou-value"></span>
     </div>
     <div class="form-row">
-        <label for="node-input-debug"><i class="fa fa-bug"></i> Debug</label>
+        <label for="node-input-debug"><i class="fa fa-picture-o"></i> Base64 image output</label>
         <input type="checkbox" id="node-input-debug">
     </div>
     <div class="form-row">
@@ -771,7 +776,6 @@
 
                 const formData = new FormData();
                 formData.append("model_file", file);
-                console.log(info, "本地上传的信息");
                 formData.append("model_info", JSON.stringify(info));
 
                 fetch(`http://${host}:${port}/api/deviceMgr/uploadModel`, {
@@ -788,7 +792,6 @@
                     formData.append("model_file", node.modelFile);
                     node.modelFile = null;
                 }
-                console.log(info, "云端上传的信息");
                 info.classes = classesInput.value.split(",").map((c) => c.trim());
                 formData.append("model_info", JSON.stringify(info));
                 fetch(`http://${host}:${port}/api/deviceMgr/uploadModel`, {
