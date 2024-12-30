@@ -1,7 +1,7 @@
 module.exports = function (RED) {
     function ModelNode(config) {
         RED.nodes.createNode(this, config);
-        node = this;
+        const node = this;
         node.client = RED.nodes.getNode(config.client);
         node.config = {
             uri: config.uri,
