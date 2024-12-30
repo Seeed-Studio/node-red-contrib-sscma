@@ -8,18 +8,15 @@ module.exports = function (RED) {
             port: +config.port,
             session: config.session,
             username: config.username,
-            password: config.password
-        }
-
-        node.message = function (msg) {
-
-        }
+            password: config.password,
+        };
+        node.message = function (msg) {};
 
         if (node.client) {
             node.client.register(node);
         }
 
-        node.on('close', function (removed, done) {
+        node.on("close", function (removed, done) {
             if (node.client) {
                 node.client.deregister(node, done, removed);
                 node.client = null;
@@ -29,4 +26,4 @@ module.exports = function (RED) {
     }
 
     RED.nodes.registerType("stream", StreamNode);
-}
+};

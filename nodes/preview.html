@@ -1,81 +1,82 @@
 <script type="text/javascript">
-
     const COLORS = [
-        '#FF0000',     // Red
-        '#FF4500',     // OrangeRed
-        '#FF6347',     // Tomato
-        '#FF8C00',     // DarkOrange
-        '#FFA500',     // Orange
-        '#FFD700',     // Gold
-        '#32CD32',     // LimeGreen
-        '#006400',     // DarkGreen
-        '#4169E1',     // RoyalBlue
-        '#0000FF',     // Blue
-        '#1E90FF',     // DodgerBlue
-        '#00FFFF',     // Aqua
-        '#00CED1',     // DarkTurquoise
-        '#20B2AA',     // LightSeaGreen
-        '#FF1493',     // DeepPink
-        '#FF69B4',     // HotPink
-        '#800080',     // Purple
-        '#8A2BE2',     // BlueViolet
-        '#9400D3',     // DarkViolet
-        '#9932CC',     // DarkOrchid
-        '#BA55D3',     // MediumOrchid
-        '#FF00FF',     // Magenta
-        '#C71585',     // MediumVioletRed
-        '#D2691E',     // Chocolate
-        '#A52A2A',     // Brown
-        '#B22222',     // FireBrick
-        '#8B4513',     // SaddleBrown
-        '#DEB887',     // Burlywood
-        '#CD853F',     // Peru
-        '#F4A460',     // SandyBrown
-        '#D2B48C',     // Tan
-        '#F5DEB3',     // Wheat
-        '#BC8F8F',     // RosyBrown
-        '#C0C0C0',     // Silver
-        '#808080',     // Gray
-        '#696969',     // DimGray
-        '#A9A9A9',     // DarkGray
-        '#BDB76B',     // DarkKhaki
-        '#F5F5DC',     // Beige
-        '#FFFACD',     // LemonChiffon
-        '#FFE4B5',     // Moccasin
-        '#FFDAB9',     // PeachPuff
-        '#F0E68C',     // Khaki
-        '#EEE8AA',     // PaleGoldenrod
+        "#FF0000", // Red
+        "#FF4500", // OrangeRed
+        "#FF6347", // Tomato
+        "#FF8C00", // DarkOrange
+        "#FFA500", // Orange
+        "#FFD700", // Gold
+        "#32CD32", // LimeGreen
+        "#006400", // DarkGreen
+        "#4169E1", // RoyalBlue
+        "#0000FF", // Blue
+        "#1E90FF", // DodgerBlue
+        "#00FFFF", // Aqua
+        "#00CED1", // DarkTurquoise
+        "#20B2AA", // LightSeaGreen
+        "#FF1493", // DeepPink
+        "#FF69B4", // HotPink
+        "#800080", // Purple
+        "#8A2BE2", // BlueViolet
+        "#9400D3", // DarkViolet
+        "#9932CC", // DarkOrchid
+        "#BA55D3", // MediumOrchid
+        "#FF00FF", // Magenta
+        "#C71585", // MediumVioletRed
+        "#D2691E", // Chocolate
+        "#A52A2A", // Brown
+        "#B22222", // FireBrick
+        "#8B4513", // SaddleBrown
+        "#DEB887", // Burlywood
+        "#CD853F", // Peru
+        "#F4A460", // SandyBrown
+        "#D2B48C", // Tan
+        "#F5DEB3", // Wheat
+        "#BC8F8F", // RosyBrown
+        "#C0C0C0", // Silver
+        "#808080", // Gray
+        "#696969", // DimGray
+        "#A9A9A9", // DarkGray
+        "#BDB76B", // DarkKhaki
+        "#F5F5DC", // Beige
+        "#FFFACD", // LemonChiffon
+        "#FFE4B5", // Moccasin
+        "#FFDAB9", // PeachPuff
+        "#F0E68C", // Khaki
+        "#EEE8AA", // PaleGoldenrod
     ];
 
     const getColor = function (index, opacity = 1) {
         if (opacity < 1 && opacity >= 0) {
-            return `rgba(${parseInt(getColor(index).slice(1, 3), 16)}, ${parseInt(getColor(index).slice(3, 5), 16)}, ${parseInt(getColor(index).slice(5, 7), 16)}, ${opacity})`;
+            return `rgba(${parseInt(getColor(index).slice(1, 3), 16)}, ${parseInt(getColor(index).slice(3, 5), 16)}, ${parseInt(
+                getColor(index).slice(5, 7),
+                16,
+            )}, ${opacity})`;
         }
 
         return COLORS[index % COLORS.length];
     };
 
-
     function createSVGElement(type, attributes = {}) {
         const element = document.createElementNS("http://www.w3.org/2000/svg", type);
-        Object.keys(attributes).forEach(attr => element.setAttribute(attr, attributes[attr]));
+        Object.keys(attributes).forEach((attr) => element.setAttribute(attr, attributes[attr]));
         return element;
     }
 
     (function () {
-        RED.nodes.registerType('preview', {
-            category: 'sscma',
+        RED.nodes.registerType("preview", {
+            category: "sscma",
             color: "#77C2A4",
             defaults: {
                 name: { value: "" },
                 active: { value: true },
                 pass: { value: false },
-                outputs: { value: 0 }
+                outputs: { value: 0 },
             },
             inputs: 1,
             outputs: 0,
             icon: "font-awesome/fa-video-camera",
-            align: 'right',
+            align: "right",
             palettelabel: "preview",
             label: function () {
                 return this.name || "preview";
@@ -85,31 +86,32 @@
             },
             button: {
                 toggle: "active",
-                visible: function () { return !this.pass; },
+                visible: function () {
+                    return !this.pass;
+                },
                 onclick: function () {
                     const label = this.name || "preview";
                     var node = this;
                     $.ajax({
-                        url: `image-output/${this.id}/${this.active ? 'enable' : 'disable'}`,
+                        url: `image-output/${this.id}/${this.active ? "enable" : "disable"}`,
                         type: "POST",
                         success: function (resp, textStatus, xhr) {
                             updateNodeState(node, !node.active);
                             notifyResult(xhr.status, resp, label);
                         },
-                        error: handleAjaxError
+                        error: handleAjaxError,
                     });
-                }
+                },
             },
             oneditprepare: function () {
-                var that = this;
-                $('#node-input-width').val(this.width);
+                $("#node-input-width").val(this.width);
 
-                $('#node-input-data').typedInput({
-                    default: 'msg',
+                $("#node-input-data").typedInput({
+                    default: "msg",
                     typeField: $("#node-input-dataType"),
-                    types: ['msg']
+                    types: ["msg"],
                 });
-            }
+            },
         });
 
         const latestImages = {};
@@ -123,7 +125,7 @@
             delete latestImages[nodeid];
         };
 
-        var render = function (id, data, node) {
+        var render = function (id, data) {
             const $container = document.getElementById(id);
             if (!$container) return;
 
@@ -131,19 +133,19 @@
             let $group = document.getElementById(`image-output-group-${id}`);
 
             if (!$img) {
-                $img = createSVGElement('image', {
+                $img = createSVGElement("image", {
                     id: `image-output-img-${id}`,
-                    x: '0',
-                    y: '50'
+                    x: "0",
+                    y: "50",
                 });
                 $img.addEventListener("click", () => remove(id), { once: false });
                 $container.appendChild($img);
             }
 
             if (!$group) {
-                $group = createSVGElement('g', {
+                $group = createSVGElement("g", {
                     id: `image-output-group-${id}`,
-                    transform: "translate(0, 50)"
+                    transform: "translate(0, 50)",
                 });
                 $container.appendChild($group);
             }
@@ -151,22 +153,22 @@
             $group.innerHTML = ""; // Clear existing content
 
             if (data.image) {
-                $img.setAttribute('href', `data:image/jpeg;base64,${data.image}`);
+                $img.setAttribute("href", `data:image/jpeg;base64,${data.image}`);
             } else if (data?.resolution) {
-                const rect = createSVGElement('rect', {
-                    x: '0',
-                    y: '0',
+                const rect = createSVGElement("rect", {
+                    x: "0",
+                    y: "0",
                     width: data.resolution[0],
                     height: data.resolution[1],
-                    fill: 'black'
+                    fill: "black",
                 });
-                const text = createSVGElement('text', {
+                const text = createSVGElement("text", {
                     x: 10,
                     y: 20,
-                    'font-size': '16',
-                    fill: 'yellow',
-                    stroke: 'yellow',
-                    'font-family': 'Arial'
+                    "font-size": "16",
+                    fill: "yellow",
+                    stroke: "yellow",
+                    "font-family": "Arial",
                 });
                 text.textContent = "Warning: Please enable the model node's debug mode to display the actual image.";
                 $group.appendChild(rect);
@@ -180,10 +182,13 @@
                     const x2 = line[2] * 0.01 * data.resolution[0];
                     const y2 = line[3] * 0.01 * data.resolution[1];
                     const color = getColor(i);
-                    const lineElement = createSVGElement('line', {
-                        x1, y1, x2, y2,
+                    const lineElement = createSVGElement("line", {
+                        x1,
+                        y1,
+                        x2,
+                        y2,
                         stroke: color,
-                        'stroke-width': '1'
+                        "stroke-width": "1",
                     });
                     $group.appendChild(lineElement);
                 });
@@ -195,35 +200,35 @@
                         const [x, y, w, h, score, tar] = box;
                         const color = getColor(tar);
                         const tarStr = data.labels?.[i] ?? `NA-${tar}`;
-                        const rect = createSVGElement('rect', {
+                        const rect = createSVGElement("rect", {
                             x: x - w / 2,
                             y: y - h / 2,
                             width: w,
                             height: h,
                             fill: "none",
                             stroke: color,
-                            'stroke-width': '2'
+                            "stroke-width": "2",
                         });
                         $group.appendChild(rect);
 
-                        const rectText = createSVGElement('rect', {
+                        const rectText = createSVGElement("rect", {
                             x: x - w / 2,
                             y: y - h / 2 - 14,
                             width: w,
                             height: 16,
                             fill: color,
                             stroke: color,
-                            'stroke-width': '2'
+                            "stroke-width": "2",
                         });
                         $group.appendChild(rectText);
 
-                        const text = createSVGElement('text', {
+                        const text = createSVGElement("text", {
                             x: x - w / 2 + 5,
                             y: y - h / 2 - 2,
-                            'font-size': '14',
-                            fill: 'white',
-                            stroke: 'white',
-                            'font-family': 'Arial'
+                            "font-size": "14",
+                            fill: "white",
+                            stroke: "white",
+                            "font-family": "Arial",
                         });
                         text.textContent = data?.tracks ? `#${data.tracks[i]}: ${tarStr}(${score})` : `${tarStr}(${score})`;
                         $group.appendChild(text);
@@ -236,23 +241,23 @@
                 data.classes.forEach(([score, tar], i) => {
                     const tarStr = data.labels?.[i] ?? `NA-${tar}`;
                     const rectWidth = data.resolution[0] / data.classes.length;
-                    const rect = createSVGElement('rect', {
+                    const rect = createSVGElement("rect", {
                         x: rectWidth * i,
                         y: 0,
                         width: rectWidth,
                         height: rectHeight,
                         fill: getColor(tar),
-                        'fill-opacity': 0.3
+                        "fill-opacity": 0.3,
                     });
                     $group.appendChild(rect);
 
-                    const text = createSVGElement('text', {
+                    const text = createSVGElement("text", {
                         x: rectWidth * i,
                         y: data.resolution[1] / 24,
-                        'font-size': data.resolution[1] / 24,
-                        'font-weight': 'bold',
-                        'font-family': 'arial',
-                        fill: '#ffffff'
+                        "font-size": data.resolution[1] / 24,
+                        "font-weight": "bold",
+                        "font-family": "arial",
+                        fill: "#ffffff",
                     });
                     text.textContent = `${tarStr}: ${score}`;
                     $group.appendChild(text);
@@ -270,41 +275,41 @@
                         color = getColor(tar);
                         rgba = getColor(tar, 0.3);
                         const tarStr = data.labels?.[i] ?? `NA-${tar}`;
-                        const rect = createSVGElement('rect', {
+                        const rect = createSVGElement("rect", {
                             x: x - w / 2,
                             y: y - h / 2,
                             width: w,
                             height: h,
                             fill: "none",
                             stroke: color,
-                            'stroke-width': '2'
+                            "stroke-width": "2",
                         });
                         $group.appendChild(rect);
 
-                        const rectText = createSVGElement('rect', {
+                        const rectText = createSVGElement("rect", {
                             x: x - w / 2,
                             y: y - h / 2 - 14,
                             width: w,
                             height: 16,
                             fill: color,
                             stroke: color,
-                            'stroke-width': '2'
+                            "stroke-width": "2",
                         });
                         $group.appendChild(rectText);
 
-                        const text = createSVGElement('text', {
+                        const text = createSVGElement("text", {
                             x: x - w / 2 + 5,
                             y: y - h / 2 - 2,
-                            'font-size': '14',
-                            fill: 'white',
-                            stroke: 'white',
-                            'font-family': 'Arial'
+                            "font-size": "14",
+                            fill: "white",
+                            stroke: "white",
+                            "font-family": "Arial",
                         });
                         text.textContent = data?.tracks ? `#${data.tracks[i]}: ${tarStr}(${score})` : `${tarStr}(${score})`;
                         $group.appendChild(text);
                     }
                     function convertToPoints(polygon) {
-                        let points = '';
+                        let points = "";
                         for (let i = 0; i < polygon.length; i += 2) {
                             points += `${polygon[i]},${polygon[i + 1]} `;
                         }
@@ -314,11 +319,11 @@
                     // Convert the data array to SVG points format
                     const points = convertToPoints(polygon);
 
-                    const polygonElement = createSVGElement('polygon', {
+                    const polygonElement = createSVGElement("polygon", {
                         points: points,
                         fill: rgba,
                         stroke: color,
-                        'stroke-width': '2',
+                        "stroke-width": "2",
                     });
                     $group.appendChild(polygonElement);
                 });
@@ -333,35 +338,35 @@
                         const [x, y, w, h, score, tar] = box;
                         const color = getColor(tar);
                         const tarStr = data.labels?.[i] ?? `NA-${tar}`;
-                        const rect = createSVGElement('rect', {
+                        const rect = createSVGElement("rect", {
                             x: x - w / 2,
                             y: y - h / 2,
                             width: w,
                             height: h,
                             fill: "none",
                             stroke: color,
-                            'stroke-width': '2'
+                            "stroke-width": "2",
                         });
                         $group.appendChild(rect);
 
-                        const rectText = createSVGElement('rect', {
+                        const rectText = createSVGElement("rect", {
                             x: x - w / 2,
                             y: y - h / 2 - 14,
                             width: w,
                             height: 16,
                             fill: color,
                             stroke: color,
-                            'stroke-width': '2'
+                            "stroke-width": "2",
                         });
                         $group.appendChild(rectText);
 
-                        const text = createSVGElement('text', {
+                        const text = createSVGElement("text", {
                             x: x - w / 2 + 5,
                             y: y - h / 2 - 2,
-                            'font-size': '14',
-                            fill: 'white',
-                            stroke: 'white',
-                            'font-family': 'Arial'
+                            "font-size": "14",
+                            fill: "white",
+                            stroke: "white",
+                            "font-family": "Arial",
                         });
                         text.textContent = data?.tracks ? `#${data.tracks[i]}: ${tarStr}(${score})` : `${tarStr}(${score})`;
                         $group.appendChild(text);
@@ -373,254 +378,247 @@
                         const y = point[1];
                         const target = point[3] ? point[3] : j;
                         // draw if point in the box
-                        if (
-                            x > box[0] - box[2] / 2 &&
-                            x < box[0] + box[2] / 2 &&
-                            y > box[1] - box[3] / 2 &&
-                            y < box[1] + box[3] / 2
-                        ) {
+                        if (x > box[0] - box[2] / 2 && x < box[0] + box[2] / 2 && y > box[1] - box[3] / 2 && y < box[1] + box[3] / 2) {
                             points.add(target);
                         }
-
                     }
 
                     if (keypoints?.length === 17) {
                         // nose to left eye
                         if (points.has(0) && points.has(1)) {
                             const color = getColor(0);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[0][0],
                                 y1: keypoints[0][1],
                                 x2: keypoints[1][0],
                                 y2: keypoints[1][1],
                                 stroke: color,
-                                'stroke-width': '2'
+                                "stroke-width": "2",
                             });
                             $group.appendChild(line);
                         }
                         // nose to right eye
                         if (points.has(0) && points.has(2)) {
                             const color = getColor(0);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[0][0],
                                 y1: keypoints[0][1],
                                 x2: keypoints[2][0],
                                 y2: keypoints[2][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left eye to left ear
                         if (points.has(1) && points.has(3)) {
                             const color = getColor(0);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[1][0],
                                 y1: keypoints[1][1],
                                 x2: keypoints[3][0],
                                 y2: keypoints[3][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right eye to right ear
                         if (points.has(2) && points.has(4)) {
                             const color = getColor(0);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[2][0],
                                 y1: keypoints[2][1],
                                 x2: keypoints[4][0],
                                 y2: keypoints[4][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left ear to left shoulder
                         if (points.has(3) && points.has(5)) {
                             const color = getColor(0);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[3][0],
                                 y1: keypoints[3][1],
                                 x2: keypoints[5][0],
                                 y2: keypoints[5][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right ear to right shoulder
                         if (points.has(4) && points.has(6)) {
                             const color = getColor(0);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[4][0],
                                 y1: keypoints[4][1],
                                 x2: keypoints[6][0],
                                 y2: keypoints[6][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left shoulder to right shoulder
                         if (points.has(5) && points.has(6)) {
                             const color = getColor(1);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[5][0],
                                 y1: keypoints[5][1],
                                 x2: keypoints[6][0],
                                 y2: keypoints[6][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left shoulder to left hip
                         if (points.has(5) && points.has(11)) {
                             const color = getColor(2);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[5][0],
                                 y1: keypoints[5][1],
                                 x2: keypoints[11][0],
                                 y2: keypoints[11][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right shoulder to right hip
                         if (points.has(6) && points.has(12)) {
                             const color = getColor(2);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[6][0],
                                 y1: keypoints[6][1],
                                 x2: keypoints[12][0],
                                 y2: keypoints[12][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left hip to right hip
                         if (points.has(11) && points.has(12)) {
                             const color = getColor(2);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[11][0],
                                 y1: keypoints[11][1],
                                 x2: keypoints[12][0],
                                 y2: keypoints[12][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left shoulder to left elbow
                         if (points.has(5) && points.has(7)) {
                             const color = getColor(1);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[5][0],
                                 y1: keypoints[5][1],
                                 x2: keypoints[7][0],
                                 y2: keypoints[7][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left elbow to left wrist
                         if (points.has(7) && points.has(9)) {
                             const color = getColor(1);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[7][0],
                                 y1: keypoints[7][1],
                                 x2: keypoints[9][0],
                                 y2: keypoints[9][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right shoulder to right elbow
                         if (points.has(6) && points.has(8)) {
                             const color = getColor(6);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[6][0],
                                 y1: keypoints[6][1],
                                 x2: keypoints[8][0],
                                 y2: keypoints[8][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right elbow to right wrist
                         if (points.has(8) && points.has(10)) {
                             const color = getColor(1);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[8][0],
                                 y1: keypoints[8][1],
                                 x2: keypoints[10][0],
                                 y2: keypoints[10][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left hip to left knee
                         if (points.has(11) && points.has(13)) {
                             const color = getColor(3);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[11][0],
                                 y1: keypoints[11][1],
                                 x2: keypoints[13][0],
                                 y2: keypoints[13][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // left knee to left ankle
                         if (points.has(13) && points.has(15)) {
                             const color = getColor(3);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[13][0],
                                 y1: keypoints[13][1],
                                 x2: keypoints[15][0],
                                 y2: keypoints[15][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right hip to right knee
                         if (points.has(12) && points.has(14)) {
                             const color = getColor(3);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[12][0],
                                 y1: keypoints[12][1],
                                 x2: keypoints[14][0],
                                 y2: keypoints[14][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                         // right knee to right ankle
                         if (points.has(14) && points.has(16)) {
                             const color = getColor(3);
-                            const line = createSVGElement('line', {
+                            const line = createSVGElement("line", {
                                 x1: keypoints[14][0],
                                 y1: keypoints[14][1],
                                 x2: keypoints[16][0],
                                 y2: keypoints[16][1],
                                 stroke: color,
-                                'stroke-width': '2'
-                            })
+                                "stroke-width": "2",
+                            });
                             $group.appendChild(line);
                         }
                     }
-
 
                     for (let j = 0; j < keypoints.length; j += 1) {
                         const point = keypoints[j];
@@ -628,39 +626,32 @@
                         const y = point[1];
                         const target = point[3] ? point[3] : j;
                         // draw if point in the box
-                        if (
-                            x > box[0] - box[2] / 2 &&
-                            x < box[0] + box[2] / 2 &&
-                            y > box[1] - box[3] / 2 &&
-                            y < box[1] + box[3] / 2
-                        ) {
+                        if (x > box[0] - box[2] / 2 && x < box[0] + box[2] / 2 && y > box[1] - box[3] / 2 && y < box[1] + box[3] / 2) {
                             const color = getColor(target);
-                            const circle = createSVGElement('circle', {
+                            const circle = createSVGElement("circle", {
                                 cx: x,
                                 cy: y,
                                 r: 3,
                                 stroke: color,
-                                'stroke-width': '2',
-                                fill: color
-                            })
+                                "stroke-width": "2",
+                                fill: color,
+                            });
                             $group.appendChild(circle);
                         }
-
                     }
                 });
-
             }
         };
 
         var updateNodeState = function (node, newState) {
             const historyEvent = {
-                t: 'edit',
+                t: "edit",
                 node: node,
                 changes: {
-                    active: newState
+                    active: newState,
                 },
                 dirty: node.dirty,
-                changed: node.changed
+                changed: node.changed,
             };
             node.changed = true;
             node.dirty = true;
@@ -678,9 +669,14 @@
         var handleAjaxError = function (jqXHR, textStatus, errorThrown) {
             let message;
             switch (jqXHR.status) {
-                case 404: message = "node not deployed"; break;
-                case 0: message = "no response from server"; break;
-                default: message = `unexpected error (${textStatus}) ${errorThrown}`;
+                case 404:
+                    message = "node not deployed";
+                    break;
+                case 0:
+                    message = "no response from server";
+                    break;
+                default:
+                    message = `unexpected error (${textStatus}) ${errorThrown}`;
             }
             RED.notify(`<strong>Error</strong>: ${message}`, "error");
         };
@@ -688,9 +684,9 @@
         function subscribe() {
             $.ajax({
                 url: `image-output/0/alive`,
-                type: "POST"
+                type: "POST",
             });
-            RED.comms.subscribe('preview', function (event, data) {
+            RED.comms.subscribe("preview", function (event, data) {
                 if (data.hasOwnProperty("data")) {
                     latestImages[data.id] = data.data;
                     render(data.id, data.data, RED.nodes.node(data.id));
@@ -705,26 +701,27 @@
             $.ajax({
                 url: `image-output/0/alive`,
                 type: "POST",
-                timeout: 500
-            })
+                timeout: 500,
+            });
         }, 3000);
     })();
 
-    RED.events.on('nodes:add', function (node) {
+    RED.events.on("nodes:add", function (node) {
         const existingNodes = RED.nodes.filterNodes({ type: "preview" });
         if (existingNodes.length > 1) {
             RED.notify("This node can only be instantiated once.", "error");
             RED.nodes.remove(node.id);
         }
     });
-
-
 </script>
 
 <script type="text/html" data-template-name="preview">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
-        <input type="text" id="node-input-name">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Label
+        </label>
+        <input type="text" id="node-input-name" />
     </div>
     <canvas id="canvas" hidden></canvas>
 </script>
