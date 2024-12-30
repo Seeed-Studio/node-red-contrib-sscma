@@ -20,6 +20,44 @@ module.exports = function (RED) {
                 .map((c) => c.trim()),
         };
 
+        node.on("input", function (msg) {
+            try {
+                if (typeof msg.payload !== "object") {
+                    return msg;
+                }
+                const { tiou, tscore, trace, debug, counting, splitter, labels } = msg.payload ?? {};
+                const config = {};
+                if (typeof tiou === "number") {
+                    config.tiou = tiou;
+                }
+                if (typeof tscore === "number") {
+                    config.tscore = tscore;
+                }
+                if (typeof trace === "boolean") {
+                    config.trace = trace;
+                }
+                if (typeof debug === "boolean") {
+                    config.debug = debug;
+                }
+                if (typeof counting === "boolean") {
+                    config.counting = counting;
+                }
+                if (Array.isArray(splitter)) {
+                    config.splitter = splitter;
+                }
+                if (Array.isArray(labels)) {
+                    config.labels = labels;
+                }
+                if (Object.keys(config).length === 0) {
+                    return msg;
+                }
+                node.client.request(node.id, "config", config);
+            } catch (error) {
+                console.log(error, "----出现了错误");
+                return msg;
+            }
+        });
+
         // if connect to preview, set preview to true
         node.wires.forEach((wires) => {
             wires.forEach((wire) => {
