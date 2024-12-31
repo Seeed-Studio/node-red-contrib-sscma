@@ -582,7 +582,7 @@
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
                         host = c.host ? c.host : host;
-                        port = c.apiport;
+                        port = c.apiport ? c.apiport : port;
                     }
                 });
 
