@@ -1,46 +1,62 @@
 <script type="text/html" data-template-name="save">
-        <!-- Existing configurations -->
-<div class="form-row">
-    <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
-    <input type="text" id="node-input-name">
-</div>
-<div class="form-row">
-    <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
-    <input type="text" id="node-input-client">
-</div>
-<div class="form-row">
-    <label for="node-input-storage"><i class="fa fa-folder"></i> Storage</label>
-    <select id="node-input-storage">
-        <option value="local" selected>Local</option>
-        <option value="external">External</option>
-    </select>
-</div>
-<div class="form-row">
-    <label for="node-input-start"><i class="fa fa-toggle-on"></i> Start</label>
-    <input type="checkbox" id="node-input-start">
-</div>
-<div class="form-row">
-    <label for="node-input-slice"><i class="fa fa-clock-o"></i> Slice</label>
-    <select id="node-input-slice">
-        <option value="120">2</option>
-        <option value="300" selected>5</option>
-        <option value="600">10</option>
-        <option value="1800">30</option>
-    </select>
-    <span> Minutes</span>
-</div>
-<div class="form-row">
-    <label for="node-input-duration"><i class="fa fa-hourglass-half"></i> Duration</label>
-    <input type="number" id="node-input-duration" min="0" placeholder="Enter 0 for continues or a value in minutes" ,
-        style="width: 65%;">
-    <span> Minutes</span>
-</div>
-
+    <!-- Existing configurations -->
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Label
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            Client
+        </label>
+        <input type="text" id="node-input-client" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-storage">
+            <i class="fa fa-folder"></i>
+            Storage
+        </label>
+        <select id="node-input-storage">
+            <option value="local" selected>Local</option>
+            <option value="external">External</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-start">
+            <i class="fa fa-toggle-on"></i>
+            Start
+        </label>
+        <input type="checkbox" id="node-input-start" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-slice">
+            <i class="fa fa-clock-o"></i>
+            Slice
+        </label>
+        <select id="node-input-slice">
+            <option value="120">2</option>
+            <option value="300" selected>5</option>
+            <option value="600">10</option>
+            <option value="1800">30</option>
+        </select>
+        <span>Minutes</span>
+    </div>
+    <div class="form-row">
+        <label for="node-input-duration">
+            <i class="fa fa-hourglass-half"></i>
+            Duration
+        </label>
+        <input type="number" id="node-input-duration" min="0" placeholder="Enter 0 for continues or a value in minutes" , style="width: 65%;" />
+        <span>Minutes</span>
+    </div>
 </script>
 <script type="text/javascript">
-    RED.nodes.registerType('save', {
-        category: 'sscma',
-        color: '#D9A066',
+    RED.nodes.registerType("save", {
+        category: "sscma",
+        color: "#D9A066",
         defaults: {
             name: { value: this.name || "save" },
             slice: { value: "300" },
@@ -55,19 +71,33 @@
         label: function () {
             return this.name || "save";
         },
-        oneditprepare: function () {
-        },
-        oneditsave: function () {
-        },
+        oneditprepare: function () {},
+        oneditsave: function () {},
         oneditcancel: function () {
             // Logic to handle cancellation if necessary
-        }
+        },
     });
-    RED.events.on('nodes:add', function (node) {
+    RED.events.on("nodes:add", function (node) {
         const existingNodes = RED.nodes.filterNodes({ type: "save" });
         if (existingNodes.length > 1) {
             RED.notify("This node can only be instantiated once.", "error");
             RED.nodes.remove(node.id);
         }
     });
+</script>
+<script type="text/html" data-help-name="save">
+    <p>This is the Save node for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.</p>
+
+    <h3>Slice</h3>
+    <p>This is the time gap between each recording.</p>
+
+    <h3>Duration</h3>
+    <p>This is the recording duration of each segment.</p>
+
+    <h3>Stored Location</h3>
+    <dd>
+        You can find all the save data in
+        <code>userdata/VIDEO</code>
+        .
+    </dd>
 </script>

@@ -1,40 +1,61 @@
 <script type="text/html" data-template-name="stream">
     <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Label</label>
-        <input type="text" id="node-input-name">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Label
+        </label>
+        <input type="text" id="node-input-name" />
     </div>
     <div class="form-row">
-        <label for="node-input-client"><i class="fa fa-globe"></i> Client</label>
-        <input type="text" id="node-input-client">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            Client
+        </label>
+        <input type="text" id="node-input-client" />
     </div>
     <div class="form-row">
-        <label for="node-input-protocol"><i class="fa fa-at"></i> Protocol</label>
+        <label for="node-input-protocol">
+            <i class="fa fa-at"></i>
+            Protocol
+        </label>
         <select id="node-input-protocol" style="width: 70%;">
             <option value="0">RTSP</option>
         </select>
     </div>
     <div class="form-row">
-        <label for="node-input-uri"><i class="fa fa-plug"></i> Port</label>
-        <input type="number" id="node-input-port" min="1" max="65535">
+        <label for="node-input-uri">
+            <i class="fa fa-plug"></i>
+            Port
+        </label>
+        <input type="number" id="node-input-port" min="1" max="65535" />
     </div>
     <div class="form-row">
-        <label for="node-input-session"><i class="fa fa-comments"></i> Session</label>
-        <input type="text" id="node-input-session" maxlength="8">
+        <label for="node-input-session">
+            <i class="fa fa-comments"></i>
+            Session
+        </label>
+        <input type="text" id="node-input-session" maxlength="8" />
     </div>
     <div class="form-row">
-        <label for="node-input-username"><i class="fa fa-user"></i> Username</label>
-        <input type="text" id="node-input-username" maxlength="32" >
+        <label for="node-input-username">
+            <i class="fa fa-user"></i>
+            Username
+        </label>
+        <input type="text" id="node-input-username" maxlength="32" />
     </div>
     <div class="form-row">
-        <label for="node-input-password"><i class="fa fa-lock"></i> Password</label>
-        <input type="password" id="node-input-password" maxlength="32" >
+        <label for="node-input-password">
+            <i class="fa fa-lock"></i>
+            Password
+        </label>
+        <input type="password" id="node-input-password" maxlength="32" />
     </div>
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('stream', {
-        category: 'sscma',
-        color: '#E28B8B',
+    RED.nodes.registerType("stream", {
+        category: "sscma",
+        color: "#E28B8B",
         defaults: {
             name: { value: this.name || "stream" },
             protocol: { value: 0 },
@@ -51,4 +72,9 @@
             return this.name || "stream";
         },
     });
+</script>
+<script type="text/html" data-help-name="stream">
+    <p>This is the Stream node for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.</p>
+    <p>After setting up the RTSP, you can use VLC or other tools to subscript the port 554 for the live stream.</p>
+    <p>Please note the stream does not include audio.</p>
 </script>
