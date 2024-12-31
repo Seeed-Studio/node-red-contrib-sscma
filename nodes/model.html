@@ -813,3 +813,56 @@
         }
     });
 </script>
+<script type="text/html" data-help-name="model">
+    <p>This is the model node for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.</p>
+
+    <h3>Supported Model</h3>
+    <p>Freely change models like yolo v5, yolo v8, yolo 11 and so on. You can also enjoy the models from SenseCraft to find the perfect fit for you.</p>
+
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>
+            payload
+            <span class="property-type">buffer</span>
+        </dt>
+        <dd>
+            Input from the
+            <code>camera</code>
+            node
+        </dd>
+    </dl>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>
+            payload.data
+            <span class="property-type">object</span>
+        </dt>
+        <dd>
+            <p>
+                <b>boxes</b>
+                - array containing detection results with following format:
+            </p>
+            <ul>
+                <li>[0]: center_x</li>
+                <li>[1]: center_y</li>
+                <li>[2]: box_width</li>
+                <li>[3]: box_height</li>
+                <li>[4]: detected object score</li>
+                <li>[5]: detected object class</li>
+            </ul>
+        </dd>
+
+        <dt>
+            count
+            <span class="property-type">number</span>
+        </dt>
+        <dd>Numbers of images that has been send out since deploy</dd>
+
+        <dt>
+            image
+            <span class="property-type">string</span>
+        </dt>
+        <dd>The base64 image output, output size is 640×480 pixel</dd>
+    </dl>
+</script>
