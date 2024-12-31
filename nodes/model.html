@@ -581,7 +581,7 @@
                 var port = 80;
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
-                        host = c.host;
+                        host = c.host ? c.host : host;
                         port = c.apiport;
                     }
                 });
