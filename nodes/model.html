@@ -664,6 +664,7 @@
                     // 获取模型文件
                     const file = await streamTransferFile(model_snapshot.arguments.url);
                     node.modelFile = file;
+                    $("#node-input-uri").val("");
                     node.modelInfo = JSON.stringify({ ...model_snapshot, model_id: String(model.id) });
 
                     // 处理类别信息
