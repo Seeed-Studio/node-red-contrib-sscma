@@ -10,11 +10,17 @@ module.exports = function (RED) {
             username: config.username,
             password: config.password,
         };
-        node.message = function (msg) {};
+        node.message = function (msg) { };
 
         if (node.client) {
             node.client.register(node);
         }
+
+        node.on('input', function (msg) {
+            if (msg.hasOwnProperty("enabled")) {
+                node.client.request(node.id, "enabled", msg.enabled);
+            }
+        });
 
         node.on("close", function (removed, done) {
             if (node.client) {

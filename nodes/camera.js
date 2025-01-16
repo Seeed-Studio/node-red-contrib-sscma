@@ -29,6 +29,13 @@ module.exports = function (RED) {
                 });
             });
         });
+
+        node.on('input', function (msg) {
+            if (msg.hasOwnProperty("enabled")) {
+                node.client.request(node.id, "enabled", msg.enabled);
+            }
+        });
+
         node.message = function (msg) {
             node.send(msg);
         };
@@ -59,9 +66,19 @@ module.exports = function (RED) {
                     res.status(404).send("Node not found");
                     return;
                 }
-                const status = state === "on" ? 1 : 0;
-                node.client.request(id, "light", status);
-                res.send(status ? "on" : "off");
+                if (state == "pause") {
+                    node.client.request(id, "pause", true);
+                    res.send("pause");
+                    return;
+                } else if (state == "start") {
+                    node.client.request(id, "pause", false);
+                    res.send("start");
+                    return;
+                } else if (state == "on" || state == "off") {
+                    const status = state === "on" ? 1 : 0;
+                    node.client.request(id, "light", status);
+                    res.send(status ? "on" : "off");
+                }
             } catch (error) {
                 res.status(500).send(error.message);
             }

@@ -190,7 +190,14 @@ module.exports = function (RED) {
                             try {
                                 const payload = JSON.parse(message);
 
-                                if (payload.code == 0) {
+                                if (payload.name === "enabled") {
+                                    if (payload.data === true) {
+                                        node.users[id].status({ fill: "blue", shape: "dot", text: "running" });
+                                    } else {
+                                        node.users[id].status({ fill: "gray", shape: "dot", text: "idle" });
+                                    }
+                                }
+                                else if (payload.code == 0) {
                                     if (node.users[id].code != 0) {
                                         node.users[id].status({ fill: "green", shape: "ring", text: "node-red:common.status.connected" });
                                     }

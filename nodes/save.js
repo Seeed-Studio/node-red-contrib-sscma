@@ -10,22 +10,14 @@ module.exports = function (RED) {
             enabled: config.start
         }
 
+        node.on('input', function (msg) {
+            if (msg.hasOwnProperty("enabled")) {
+                node.client.request(node.id, "enabled", msg.enabled);
+            }
+        });
+
         node.message = function (msg) {
-            if (msg.hasOwnProperty('enabled')) {
-                if (msg.enabled) {
-                    node.client.request(node.id, "enable", "");
-                } else {
-                    node.client.request(node.id, "disable", "");
-                }
-            }
-            if (msg.type === "sscma") {
-                if (msg.payload.name === "start") {
-                    node.status({ fill: "blue", shape: "dot", text: "running" });
-                }
-                if (msg.payload.name === "stop") {
-                    node.status({ fill: "gray", shape: "dot", text: "idle" });
-                }
-            }
+            node.send(msg);
         }
 
         if (node.client) {
