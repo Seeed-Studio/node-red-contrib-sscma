@@ -7,7 +7,6 @@ module.exports = function (RED) {
             const directory = path.dirname(filePath);
             await fs.mkdir(directory, { recursive: true });
             await fs.writeFile(filePath, content);
-            RED.log.warn("文件写入成功");
         } catch (error) {
             RED.log.error(`写入文件时发生错误:${error}`);
             throw error;
@@ -26,23 +25,32 @@ module.exports = function (RED) {
             timer = null;
             count = 1;
         };
+        // Save locally first, and later switch to retrieving the previous position.
+        let lastMoveData = null;
         node.on("input", function (msg) {
             if (typeof msg?.payload !== "object") {
                 return;
             }
-            const { yaw_axis, pitch_axis } = msg.payload;
-            console.log(yaw_axis, pitch_axis);
-            let action = "";
-            if (yaw_axis) {
-                action += `1_${yaw_axis}_90`;
+            const { yaw_angle, yaw_speed, pitch_angle, pitch_speed } = msg.payload;
+            const moveDataStr = `${yaw_angle}##${yaw_speed}##${pitch_angle}##${pitch_speed}`;
+            if (moveDataStr === lastMoveData) {
+                return;
             }
-            if (pitch_axis) {
+            lastMoveData = moveDataStr;
+            let action = "";
+            if (yaw_angle) {
+                action += `1_${yaw_angle}_${yaw_speed ?? 90}`;
+            }
+            if (pitch_angle) {
                 if (action) {
                     action += "+";
                 }
-                action += `2_${pitch_axis}_90`;
+                action += `2_${pitch_angle}_${pitch_speed ?? 90}`;
             }
             clean();
+            if (!action) {
+                return;
+            }
             timer = setInterval(() => {
                 if (count === 5) {
                     clean();
