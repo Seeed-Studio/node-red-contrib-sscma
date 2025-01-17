@@ -24,9 +24,6 @@ export default [
                 ...globals.node,
             },
         },
-        rules: {
-            "no-prototype-builtins": 0,
-        },
     },
     {
         languageOptions: {
@@ -38,4 +35,11 @@ export default [
         },
     },
     pluginJs.configs.recommended,
+    {
+        rules: {
+            "no-prototype-builtins": "off",
+            "no-var": "error",
+            "prefer-const": "error",
+        },
+    },
 ];

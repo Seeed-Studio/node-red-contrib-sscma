@@ -1,0 +1,73 @@
+<script type="text/html" data-template-name="read">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Node Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+
+    <div class="form-row" style="display: flex; margin-top: 50px;">
+        <label>
+            <i class="fa fa-refresh"></i>
+            Reading selection
+        </label>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+            <div class="checkbox-item">
+                <input type="checkbox" id="node-input-yaw" style="width: auto;" />
+                <i class="fa fa-arrows-h"></i>
+                <label for="node-input-yaw" style="width: auto; margin-bottom: 0px;">Yaw axis (left and right)</label>
+            </div>
+            <div class="checkbox-item">
+                <input type="checkbox" id="node-input-pitch" style="width: auto" />
+                <i class="fa fa-arrows-v"></i>
+                <label for="node-input-pitch" style="width: auto; margin-bottom: 0px;">Pitch axis (up and down)</label>
+            </div>
+        </div>
+    </div>
+    <div class="form-row" style="margin-top: 50px;">
+        <label for="node-input-name">
+            <i class="fa fa-list"></i>
+            Output
+        </label>
+        <input type="text" id="node-input-output" />
+        <input type="hidden" id="node-input-output-type" />
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("read", {
+        category: "sscma",
+        color: "#C7E9C0",
+        defaults: {
+            name: { value: "" },
+            yaw: { value: true },
+            pitch: { value: true },
+            output: { value: "" },
+            "output-type": { value: "" },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-circle-o-notch",
+        label: function () {
+            return this.name || "read motors";
+        },
+        oneditprepare: function () {
+            $("#node-input-output").typedInput({
+                type: "msg",
+                types: ["msg"],
+                typeField: "#node-input-output-type",
+            });
+        },
+        oneditsave: function () {},
+    });
+</script>
+<style>
+    .checkbox-item {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        align-items: center;
+    }
+</style>
+<script type="text/html" data-help-name="read"></script>
