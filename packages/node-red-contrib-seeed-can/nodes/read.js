@@ -13,27 +13,29 @@ module.exports = function (RED) {
             try {
                 const sendArr = [];
                 const items = line.split(" ").filter((e) => e !== "");
+                const id = items[CAN_ID_INDEX];
+                const data = items.slice(DATA_INDEX);
                 if (items.length < DATA_INDEX + DATA_LENGTH) {
                     return;
                 }
                 if (items[CAN_BUS_INDEX] !== client.can.interface) {
                     return;
                 }
-                if (!config.filter || node.rules.length === 0) {
-                    node.send({ payload: items.slice(DATA_INDEX) });
+                if (!config.filter) {
+                    node.send({ payload: { id, data } });
                     return;
                 }
-                if (items[CAN_ID_INDEX] !== node.canId) {
+                if (id !== node.canId) {
                     return;
                 }
                 if (node.rules.length === 0) {
-                    node.send({ payload: items.slice(DATA_INDEX) });
+                    node.send({ payload: { id, data } });
                     return;
                 }
                 node.rules.forEach((rule, i) => {
                     const item = items[DATA_INDEX + Number(rule.index)];
                     if (item && rule.value === item) {
-                        sendArr[i] = { payload: items.slice(DATA_INDEX) };
+                        sendArr[i] = { payload: { id, data } };
                     }
                 });
                 node.send(sendArr);

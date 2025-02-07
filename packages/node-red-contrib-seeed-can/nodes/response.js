@@ -38,7 +38,7 @@ module.exports = function (RED) {
                             if (inputItems[0] !== items[DATA_INDEX]) {
                                 return;
                             }
-                            node.send({ payload: items.slice(DATA_INDEX) });
+                            node.send({ payload: { id, data: items.slice(DATA_INDEX) } });
                         } catch (error) {
                             node.error(`Error: ${error.message}`);
                         }
