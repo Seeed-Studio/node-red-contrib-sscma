@@ -1,0 +1,190 @@
+<script type="text/html" data-template-name="read">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" placeholder="Name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            <span>Client</span>
+        </label>
+        <input type="text" id="node-input-client" />
+    </div>
+    <div class="form-row filter-label">
+        <label for="node-input-name">
+            <i class="fa fa-filter"></i>
+            Filter
+        </label>
+        <div style="flex: 1;"></div>
+        <div style="width: 20px; height: 20px;">
+            <input type="checkbox" id="node-input-filter" />
+            <input type="hidden" id="node-input-outputs" />
+        </div>
+    </div>
+    <div class="filter-box hide-filter">
+        <div style="display: flex; flex-direction: row; gap: 10px; align-items: center; margin-bottom: 10px;">
+            <label for="node-input-canId" class="input-id-label">CAN id =</label>
+            <input type="text" id="node-input-canId" class="filter-input-id" placeholder="141" />
+        </div>
+        <div class="form-row node-input-rule-container-row">
+            <ol id="node-input-rule-container" style="border: 1px solid #D9D9D9; border-radius: 6px; padding: 10px;"></ol>
+            <a href="#" class="editor-button editor-button-small" id="node-input-add-rule" style="margin: 10px 0px;">
+                <i class="fa fa-plus"></i>
+                Add rule
+            </a>
+        </div>
+    </div>
+</script>
+
+<script type="text/html" data-template-name="read-rule-template">
+    <li class="ui-sortable-handle rule-item" style="border-bottom: 1px solid #D9D9D9;">
+        <div style="padding: 10px; display: flex; align-items: center;">
+            <div style="display: flex; align-items: center; width: 50%;">
+                <i class="fa fa-bars" style="cursor: move; margin-right: 10px;"></i>
+                <span style="margin-right: 10px; font-size: 12px; color: #a0a0a0;">data</span>
+                <span style="margin-right: 5px;">[</span>
+                <select style="width: 90px" class="rule-index">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                </select>
+                <span style="margin-left: 5px; margin-right: 10px;">]</span>
+                <span style="margin-right: 10px;">==</span>
+                <input type="text" style="width: 120px" class="rule-value" placeholder="HEX" />
+            </div>
+            <div style="flex: 1;"></div>
+            <a href="#" class="editor-button editor-button-small"><i class="fa fa-remove"></i></a>
+        </div>
+    </li>
+</script>
+
+<style>
+    .filter-label {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+    }
+    .filter-box {
+        margin-left: 10px;
+    }
+    #node-input-rule-container {
+        list-style-type: none;
+        margin: 0;
+    }
+
+    #node-input-rule-container .rule-item:last-child {
+        border-bottom: none !important;
+    }
+    .input-id-label {
+        color: #a0a0a0 !important;
+        font-size: 12px !important;
+    }
+    .filter-input-id {
+        width: 65px !important;
+    }
+    .hide-filter {
+        display: none;
+    }
+</style>
+
+<script type="text/javascript">
+    RED.nodes.registerType("read", {
+        category: "function",
+        color: "#a6bbcf",
+        defaults: {
+            name: { value: "" },
+            client: { type: "can", required: true, label: RED._("can") },
+            filter: { value: false },
+            canId: { value: "" },
+            rules: { value: [{ index: 0, value: "" }] },
+            outputs: { value: 1 },
+        },
+        inputs: 0,
+        outputs: 1,
+        icon: "font-awesome/fa-circle-o-notch",
+        label: function () {
+            return this.name || "CAN Read";
+        },
+        oneditprepare: function () {
+            const node = this;
+            const container = $("#node-input-rule-container");
+            const filterCheckbox = $("#node-input-filter");
+            const filterBox = $(".filter-box");
+            const outputCount = $("#node-input-outputs").val("{}");
+
+            // 添加复选框change事件
+            filterCheckbox.change(function () {
+                if ($(this).is(":checked")) {
+                    filterBox.removeClass("hide-filter");
+                } else {
+                    filterBox.addClass("hide-filter");
+                }
+            });
+
+            // 初始化排序功能
+            container.sortable({
+                axis: "y",
+                handle: ".fa-bars",
+                cursor: "move",
+            });
+
+            // 添加规则函数
+            function addRule(rule) {
+                rule = rule || { index: 0, value: "" };
+                const template = $($('[data-template-name="read-rule-template"]').html());
+
+                template.find(".rule-index").val(rule.index);
+                template.find(".rule-value").val(rule.value);
+
+                // 删除按钮事件
+                template
+                    .find(".fa-remove")
+                    .parent()
+                    .click(function () {
+                        $(this).closest(".rule-item").remove();
+                        outputCount.val(container.children().length);
+                    });
+
+                container.append(template);
+                outputCount.val(container.children().length);
+            }
+
+            // 添加按钮事件
+            $("#node-input-add-rule").click(function (e) {
+                e.preventDefault();
+                if (container.children().length < 8) {
+                    addRule();
+                }
+                return false;
+            });
+
+            // 加载已有规则
+            if (node.rules) {
+                node.rules.forEach(function (rule) {
+                    addRule(rule);
+                });
+            }
+        },
+        oneditsave: function () {
+            const rules = [];
+            $("#node-input-rule-container")
+                .children()
+                .each(function () {
+                    const rule = $(this);
+                    rules.push({
+                        index: rule.find(".rule-index").val(),
+                        value: rule.find(".rule-value").val(),
+                    });
+                });
+            this.rules = rules;
+        },
+    });
+</script>
