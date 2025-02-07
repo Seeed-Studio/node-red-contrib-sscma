@@ -11,7 +11,8 @@
             "read": "nodes/read.js",
             "write": "nodes/write.js",
             "can": "nodes/can.js",
-            "response": "nodes/response.js"
+            "response": "nodes/response.js",
+            "motor config": "nodes/motorConfig.js"
         }
     },
     "keywords": [],
