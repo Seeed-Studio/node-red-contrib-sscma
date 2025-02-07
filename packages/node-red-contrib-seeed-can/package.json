@@ -10,7 +10,8 @@
         "nodes": {
             "read": "nodes/read.js",
             "write": "nodes/write.js",
-            "can": "nodes/can.js"
+            "can": "nodes/can.js",
+            "response": "nodes/response.js"
         }
     },
     "keywords": [],

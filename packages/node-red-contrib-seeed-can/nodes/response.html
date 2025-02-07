@@ -1,0 +1,37 @@
+<script type="text/html" data-template-name="response">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Node Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            <span>Client</span>
+        </label>
+        <input type="text" id="node-input-client" />
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("response", {
+        category: "sscma",
+        color: "#C7E9C0",
+        defaults: {
+            name: { value: "" },
+            client: { type: "can", required: true, label: RED._("can") },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-random",
+        label: function () {
+            return this.name || "CAN Response";
+        },
+        oneditprepare: function () {},
+        oneditsave: function () {},
+    });
+</script>
+<script type="text/html" data-help-name="response"></script>

@@ -14,6 +14,20 @@ module.exports = function (RED) {
             listeners[id] = listener;
         };
 
+        function findSpecificTypeNodes(type) {
+            const usingNodes = [];
+
+            RED.nodes.eachNode(function (n) {
+                if (n.type === type && n.client === node.id) {
+                    usingNodes.push(n);
+                }
+            });
+
+            return usingNodes;
+        }
+
+        const readUsed = findSpecificTypeNodes("read");
+
         const commandExecutor = new CommandExecutor("candump", [config.interface]);
 
         commandExecutor.on("data", (stdType, data) => {
@@ -47,9 +61,11 @@ module.exports = function (RED) {
             await runCommand(`ip link set ${config.interface} up`).catch((error) => {
                 node.error(`ip link set ${config.interface} up error: ${error.message}`);
             });
-            commandExecutor.start().catch((error) => {
-                node.error(`candump error: ${error.message}`);
-            });
+            if (readUsed.length !== 0) {
+                commandExecutor.start().catch((error) => {
+                    node.error(`candump error: ${error.message}`);
+                });
+            }
         })();
 
         node.on("close", () => {

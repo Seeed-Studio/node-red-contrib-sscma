@@ -1,8 +1,6 @@
+const { DATA_INDEX, DATA_LENGTH, CAN_BUS_INDEX, CAN_ID_INDEX } = require("../utils/constants");
+
 module.exports = function (RED) {
-    const DATA_INDEX = 3;
-    const DATA_LENGTH = 8;
-    const CAN_BUS_INDEX = 0;
-    const CAN_ID_INDEX = 1;
     function ReadNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
