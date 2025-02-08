@@ -5,11 +5,10 @@ module.exports = function (RED) {
         node.client = RED.nodes.getNode(config.client);
         node.config = {
             storage: config.storage,
-            slice: +config.slice,
-            duration: +config.duration * 60,
+            slice: +config.slice * Math.pow(60, Number(config.timeUnit)),
+            duration: +config.duration * Math.pow(60, Number(config.durationUnit)),
             enabled: config.start,
         };
-
         node.on("input", function (msg) {
             if (msg.hasOwnProperty("enabled")) {
                 node.client.request(node.id, "enabled", msg.enabled);

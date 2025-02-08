@@ -133,7 +133,6 @@ module.exports = function (RED) {
                 // 提取数据
                 const angelHex = currentStatusData.slice(DATA_INDEX + 6, DATA_INDEX + 8).join(".");
                 const speedHex = globalContext.get(CURRENT_SPEED_KEY) ?? DEFAULT_SPEED;
-                node.warn(`Angel: ${angelHex}, Speed: ${speedHex}`);
                 // 构建输出值
                 const outputConfig = {
                     0: () => ({
