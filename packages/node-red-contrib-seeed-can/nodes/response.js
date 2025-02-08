@@ -42,7 +42,7 @@ module.exports = function (RED) {
                         if (!isValidData) return;
                         const dataArr = items.slice(DATA_INDEX);
                         const resDataStr = `${items[CAN_BUS_INDEX]} ${items[CAN_ID_INDEX]}#${dataArr.join(".")}`;
-                        if (resDataStr !== sendCommandParam) {
+                        if (resDataStr !== sendCommandParam && inputItems[0] === items[DATA_INDEX]) {
                             receiveData = dataArr;
                         }
                     });
@@ -82,5 +82,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("response", ResponseNode);
+    RED.nodes.registerType("CAN response", ResponseNode);
 };

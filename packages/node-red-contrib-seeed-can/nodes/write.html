@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="write">
+<script type="text/html" data-template-name="CAN out">
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
@@ -17,8 +17,8 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType("write", {
-        category: "sscma",
+    RED.nodes.registerType("CAN out", {
+        category: "CANBus",
         color: "#C7E9C0",
         defaults: {
             name: { value: "" },
@@ -28,10 +28,10 @@
         outputs: 0,
         icon: "font-awesome/fa-crosshairs",
         label: function () {
-            return this.name || "CAN Write";
+            return this.name || "CAN out";
         },
         oneditprepare: function () {},
         oneditsave: function () {},
     });
 </script>
-<script type="text/html" data-help-name="write"></script>
+<script type="text/html" data-help-name="CAN out"></script>

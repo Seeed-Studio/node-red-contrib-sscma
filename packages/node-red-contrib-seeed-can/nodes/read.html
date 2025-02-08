@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="read">
+<script type="text/html" data-template-name="CAN in">
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
@@ -96,8 +96,8 @@
 </style>
 
 <script type="text/javascript">
-    RED.nodes.registerType("read", {
-        category: "function",
+    RED.nodes.registerType("CAN in", {
+        category: "CANBus",
         color: "#a6bbcf",
         defaults: {
             name: { value: "" },
@@ -111,7 +111,7 @@
         outputs: 1,
         icon: "font-awesome/fa-circle-o-notch",
         label: function () {
-            return this.name || "CAN Read";
+            return this.name || "CAN in";
         },
         oneditprepare: function () {
             const node = this;

@@ -6,7 +6,9 @@ const CAN_ID_INDEX = 1;
 const CAN_BUS = "can0";
 const YAW_ID = "141";
 const PITCH_ID = "142";
-const GET_CURRENT_COMMAND_DATA = "90.00.00.00.00.00.00.00";
+const GET_CURRENT_STATUS_COMMAND_24 = "9C.00.00.00.00.00.00.00";
+const DEFAULT_SPEED = "2C,01";
+const CURRENT_SPEED_KEY = "can$$currentSpeed";
 
 let timer = null; // 用于保存定时器
 let candumpProcess = null; // 用于保存 candump 进程
@@ -48,10 +50,10 @@ function intToHexString(num) {
  *     console.error(error);
  * }
  */
-function readCurrentData(canId) {
+function readCurrentData(canId, commandData) {
     return new Promise((resolve, reject) => {
         let tempItems = [];
-        const sendCommandParam = `${CAN_BUS} ${canId}#${GET_CURRENT_COMMAND_DATA}`;
+        const sendCommandParam = `${CAN_BUS} ${canId}#${commandData}`;
         /**
          * @type {import("child_process").ChildProcessWithoutNullStreams}
          */
@@ -68,7 +70,7 @@ function readCurrentData(canId) {
                     } else if (items[CAN_BUS_INDEX] !== CAN_BUS) {
                         reject(new Error("No valid data found"));
                     }
-                    if (resDataStr !== sendCommandParam) {
+                    if (resDataStr !== sendCommandParam && commandData.split(".")[0] === items[DATA_INDEX]) {
                         tempItems = items;
                     }
                 });
@@ -99,6 +101,7 @@ module.exports = function (RED) {
     function MotorConfigNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
+        const globalContext = node.context().global;
         node.on("input", async function (msg) {
             try {
                 // 简化输入值获取
@@ -122,14 +125,15 @@ module.exports = function (RED) {
                 };
                 // 获取当前数据
                 const motorId = motorIdMap[config.output];
-                const currentData = await readCurrentData(motorId);
-                if (currentData.length === 0) {
-                    node.error("No valid data found");
+                const currentStatusData = await readCurrentData(motorId, GET_CURRENT_STATUS_COMMAND_24);
+                if (currentStatusData.length === 0) {
+                    node.error("Conversion failed");
                     return;
                 }
                 // 提取数据
-                const angelHex = currentData.slice(DATA_INDEX + 4, DATA_INDEX + 6).join(".");
-                const speedHex = currentData.slice(DATA_INDEX + 2, DATA_INDEX + 4).join(".");
+                const angelHex = currentStatusData.slice(DATA_INDEX + 6, DATA_INDEX + 8).join(".");
+                const speedHex = globalContext.get(CURRENT_SPEED_KEY) ?? DEFAULT_SPEED;
+                node.warn(`Angel: ${angelHex}, Speed: ${speedHex}`);
                 // 构建输出值
                 const outputConfig = {
                     0: () => ({
@@ -163,6 +167,9 @@ module.exports = function (RED) {
                     ? `${tempConfig.id}#A4.00.${speedHex}.${tempConfig.value}.00.00`
                     : `${tempConfig.id}#A4.00.${tempConfig.value}.${angelHex}.00.00`;
 
+                if (!tempConfig.useSpeed) {
+                    globalContext.set(CURRENT_SPEED_KEY, tempConfig.value);
+                }
                 node.send({ payload: outputValue });
             } catch (error) {
                 node.error(`Error processing: ${error.message}`);
@@ -175,5 +182,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("motor config", MotorConfigNode);
+    RED.nodes.registerType("Motor Config", MotorConfigNode);
 };

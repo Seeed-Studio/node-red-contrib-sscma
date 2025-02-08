@@ -45,7 +45,7 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("read", ReadNode, {
+    RED.nodes.registerType("CAN in", ReadNode, {
         defaults: {
             name: { value: "" },
             canId: { value: "", required: true },

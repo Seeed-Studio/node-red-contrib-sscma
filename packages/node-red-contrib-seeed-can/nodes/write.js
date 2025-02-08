@@ -29,5 +29,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("write", WriteNode);
+    RED.nodes.registerType("CAN out", WriteNode);
 };
