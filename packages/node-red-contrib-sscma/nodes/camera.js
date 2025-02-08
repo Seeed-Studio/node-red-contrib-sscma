@@ -17,6 +17,7 @@ module.exports = function (RED) {
         node.config = {
             option: n.option || 0,
             preview: false,
+            audio: n.audio ? (isNaN(parseInt(n.volume)) ? 80 : parseInt(n.volume)) : 0,
         };
 
         // if connect to preview, set preview to true
@@ -30,7 +31,7 @@ module.exports = function (RED) {
             });
         });
 
-        node.on('input', function (msg) {
+        node.on("input", function (msg) {
             if (msg.hasOwnProperty("enabled")) {
                 node.client.request(node.id, "enabled", msg.enabled);
             }

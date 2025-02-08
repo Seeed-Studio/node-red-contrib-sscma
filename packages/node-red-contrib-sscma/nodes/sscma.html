@@ -30,8 +30,8 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType('sscma', {
-        category: 'config',
+    RED.nodes.registerType("sscma", {
+        category: "config",
         defaults: {
             name: { value: "" },
             host: { value: "localhost" },
@@ -39,10 +39,10 @@
             apiport: { value: 80 },
             clientid: { value: "recamera" },
             username: { value: "" },
-            password: { value: "" }
+            password: { value: "" },
         },
         oneditprepare: function () {
-            var node = this;
+            const node = this;
             $("#node-input-host").val(this.host);
             $("#node-input-mqttport").val(this.mqttport);
             $("#node-input-apiport").val(this.apiport);
@@ -51,7 +51,7 @@
             $("#node-input-password").val(this.password);
         },
         oneditsave: function () {
-            var node = this;
+            const node = this;
             this.host = $("#node-input-host").val();
             this.mqttport = $("#node-input-mqttport").val();
             this.apiport = $("#node-input-apiport").val();
@@ -60,17 +60,17 @@
             this.password = $("#node-input-password").val();
         },
         label: function () {
-            return "sscma"
-        }
+            return "sscma";
+        },
     });
-    RED.events.on('nodes:add', function (node) {
+    RED.events.on("nodes:add", function (node) {
         if (node.type == "sscma") {
             RED.nodes.eachConfig(function (n) {
                 if (n.id != node.id) {
                     RED.notify("This node can only be instantiated once.", "error");
                     RED.nodes.remove(node.id);
                 }
-            })
+            });
         }
     });
 </script>

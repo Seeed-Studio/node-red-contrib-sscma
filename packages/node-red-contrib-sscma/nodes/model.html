@@ -308,40 +308,41 @@
             return this.name || "model";
         },
         oneditprepare: function () {
-            var node = this;
+            const node = this;
             node.modelInfo = "";
             node.modelFile = null;
             node.infoChanged = false;
-            var uriInput = document.getElementById("node-input-uri");
-            var modelInput = document.getElementById("node-input-model");
-            var debugInput = document.getElementById("node-input-debug");
-            var traceInput = document.getElementById("node-input-trace");
-            var countingInput = document.getElementById("node-input-counting");
-            var splitterCanvas = document.getElementById("splitter-canvas");
-            var tscoreInput = document.getElementById("node-input-tscore");
-            var tiouInput = document.getElementById("node-input-tiou");
-            var tscoreValue = document.getElementById("tscore-value");
-            var tiouValue = document.getElementById("tiou-value");
-            var splitterInput = document.getElementById("node-input-splitter"); // Hidden input for the array
-            var classesContainer = document.getElementById("node-input-classes-container");
-            var classesInput = document.getElementById("node-input-classes");
-            var uploadFile = document.getElementById("upload-file");
-            var clientInput = document.getElementById("node-input-client");
-            var presetButton = document.getElementById("btn-preset");
-            var modal = document.getElementById("preset-models-modal");
-            var presetList = document.getElementById("preset-model-list");
-            var closeModalButton = document.getElementById("close-preset-modal");
+            const uriInput = document.getElementById("node-input-uri");
+            const modelInput = document.getElementById("node-input-model");
+            const debugInput = document.getElementById("node-input-debug");
+            const traceInput = document.getElementById("node-input-trace");
+            const countingInput = document.getElementById("node-input-counting");
+            const splitterCanvas = document.getElementById("splitter-canvas");
+            const tscoreInput = document.getElementById("node-input-tscore");
+            const tiouInput = document.getElementById("node-input-tiou");
+            const tscoreValue = document.getElementById("tscore-value");
+            const tiouValue = document.getElementById("tiou-value");
+            const splitterInput = document.getElementById("node-input-splitter"); // Hidden input for the array
+            const classesContainer = document.getElementById("node-input-classes-container");
+            const classesInput = document.getElementById("node-input-classes");
+            const uploadFile = document.getElementById("upload-file");
+            const clientInput = document.getElementById("node-input-client");
+            const presetButton = document.getElementById("btn-preset");
+            const modal = document.getElementById("preset-models-modal");
+            const presetList = document.getElementById("preset-model-list");
+            const closeModalButton = document.getElementById("close-preset-modal");
             const $classesContainer = $("#node-input-classes-container");
+            let splitter = [];
 
-            var classes = classesInput.value.split(",").filter(Boolean);
-            for (var i = 0; i < classes.length; i++) {
+            const classes = classesInput.value.split(",").filter(Boolean);
+            for (let i = 0; i < classes.length; i++) {
                 createClassInput(i, classes[i], true);
             }
             createClassInput(classes.length, "", true);
 
             function fetchModelInfo() {
-                var host = window.location.hostname;
-                var port = 80;
+                let host = window.location.hostname;
+                let port = 80;
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
                         host = c.host ? c.host : host;
@@ -356,12 +357,12 @@
                     .then((response) => response.json())
                     .then((data) => {
                         node.modelInfo = data.data.model_info;
-                        let model = JSON.parse(data.data.model_info);
+                        const model = JSON.parse(data.data.model_info);
                         modelInput.value = model.model_name;
                         classesInput.value = model.classes.join(",");
-                        var classes = classesInput.value.split(",");
+                        const classes = classesInput.value.split(",");
                         classesContainer.innerHTML = "";
-                        for (var i = 0; i < classes.length; i++) {
+                        for (let i = 0; i < classes.length; i++) {
                             createClassInput(i, classes[i], true);
                         }
                         createClassInput(classes.length, "", true);
@@ -371,7 +372,7 @@
             fetchModelInfo();
 
             uploadFile.addEventListener("change", function () {
-                var file = this.files[0];
+                const file = this.files[0];
                 uriInput.value = "";
                 classesInput.value = "";
                 modelInput.value = file.name;
@@ -380,8 +381,8 @@
                 RED.nodes.dirty(true);
             });
 
-            var isDrawing = false;
-            var startX = 0,
+            let isDrawing = false;
+            let startX = 0,
                 startY = 0;
 
             tscoreValue.innerText = tscoreInput.value;
@@ -407,10 +408,10 @@
                     document.getElementById("splitter-row").style.display = "none";
                 } else {
                     document.getElementById("splitter-row").style.display = "block";
-                    let line = splitterInput.value.split(",").map(Number);
-                    var canvasWidth = splitterCanvas.width;
-                    var canvasHeight = splitterCanvas.height;
-                    var ctx = splitterCanvas.getContext("2d");
+                    const line = splitterInput.value.split(",").map(Number);
+                    const canvasWidth = splitterCanvas.width;
+                    const canvasHeight = splitterCanvas.height;
+                    const ctx = splitterCanvas.getContext("2d");
                     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                     ctx.beginPath();
                     ctx.moveTo(line[0], line[1]);
@@ -421,8 +422,8 @@
 
             // Extend line to canvas edges
             function extendLineToEdges(x1, y1, x2, y2, canvasWidth, canvasHeight) {
-                var dx = x2 - x1;
-                var dy = y2 - y1;
+                const dx = x2 - x1;
+                const dy = y2 - y1;
 
                 if (dx === 0) {
                     return { x1: x1, y1: 0, x2: x2, y2: canvasHeight };
@@ -430,19 +431,19 @@
                     return { x1: 0, y1: y1, x2: canvasWidth, y2: y2 };
                 }
 
-                var slope = dy / dx;
-                var intercept = y1 - slope * x1;
+                const slope = dy / dx;
+                const intercept = y1 - slope * x1;
 
-                var xStart = 0;
-                var yStart = intercept;
+                let xStart = 0;
+                let yStart = intercept;
 
                 if (yStart < 0 || yStart > canvasHeight) {
                     yStart = yStart < 0 ? 0 : canvasHeight;
                     xStart = (yStart - intercept) / slope;
                 }
 
-                var xEnd = canvasWidth;
-                var yEnd = slope * xEnd + intercept;
+                let xEnd = canvasWidth;
+                let yEnd = slope * xEnd + intercept;
 
                 if (yEnd < 0 || yEnd > canvasHeight) {
                     yEnd = yEnd < 0 ? 0 : canvasHeight;
@@ -459,7 +460,7 @@
 
             splitterCanvas.addEventListener("mousedown", function (e) {
                 isDrawing = true;
-                var rect = splitterCanvas.getBoundingClientRect();
+                const rect = splitterCanvas.getBoundingClientRect();
                 startX = e.clientX - rect.left;
                 startY = e.clientY - rect.top;
                 splitter = [startX, startY, 0, 0]; // Store start coordinates in the array
@@ -468,22 +469,22 @@
             splitterCanvas.addEventListener("mouseup", function (e) {
                 if (isDrawing) {
                     isDrawing = false;
-                    var rect = splitterCanvas.getBoundingClientRect();
-                    var endX = e.clientX - rect.left;
-                    var endY = e.clientY - rect.top;
+                    const rect = splitterCanvas.getBoundingClientRect();
+                    const endX = e.clientX - rect.left;
+                    const endY = e.clientY - rect.top;
                     splitter[2] = endX; // Update end coordinates in the array
                     splitter[3] = endY;
 
-                    var canvasWidth = splitterCanvas.width;
-                    var canvasHeight = splitterCanvas.height;
-                    var extendedLine = extendLineToEdges(startX, startY, endX, endY, canvasWidth, canvasHeight);
+                    const canvasWidth = splitterCanvas.width;
+                    const canvasHeight = splitterCanvas.height;
+                    const extendedLine = extendLineToEdges(startX, startY, endX, endY, canvasWidth, canvasHeight);
 
                     splitter = [+extendedLine.x1, +extendedLine.y1, +extendedLine.x2, +extendedLine.y2]; // Update array with extended coordinates
 
                     // Reflect array in hidden input
                     splitterInput.value = splitter;
 
-                    var ctx = splitterCanvas.getContext("2d");
+                    const ctx = splitterCanvas.getContext("2d");
                     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
                     ctx.beginPath();
                     ctx.moveTo(extendedLine.x1, extendedLine.y1);
@@ -513,9 +514,9 @@
             classesInput.addEventListener("input", function () {
                 node.infoChanged = true;
                 classesContainer.innerHTML = "";
-                var classes = classesInput.value.split(",");
+                const classes = classesInput.value.split(",");
 
-                for (var i = 0; i < classes.length; i++) {
+                for (let i = 0; i < classes.length; i++) {
                     createClassInput(i, classes[i], true);
                 }
                 createClassInput(classes.length, "", true);
@@ -577,8 +578,8 @@
 
             // Function to fetch model list from the API
             function fetchModelList() {
-                var host = window.location.hostname;
-                var port = 80;
+                let host = window.location.hostname;
+                let port = 80;
                 RED.nodes.eachConfig(function (c) {
                     if (c.id === node.client) {
                         host = c.host ? c.host : host;
@@ -594,13 +595,13 @@
                     .then((response) => response.json())
                     .then((data) => {
                         if (data.code === 0) {
-                            var modelList = data.data.list;
+                            const modelList = data.data.list;
                             presetList.innerHTML = ""; // Clear any existing items
                             modelList.forEach((model) => {
-                                var listItem = document.createElement("li");
+                                const listItem = document.createElement("li");
                                 listItem.style.marginBottom = "10px";
 
-                                var modelLink = document.createElement("a");
+                                const modelLink = document.createElement("a");
                                 modelLink.href = "#";
                                 modelLink.innerHTML = model.name; // Display the model name
                                 modelLink.addEventListener("click", function () {
@@ -616,9 +617,9 @@
                                     node.modelInfo = JSON.stringify(model);
 
                                     classesInput.value = model.classes.join(",");
-                                    var classes = classesInput.value.split(",");
+                                    const classes = classesInput.value.split(",");
                                     classesContainer.innerHTML = "";
-                                    for (var i = 0; i < classes.length; i++) {
+                                    for (let i = 0; i < classes.length; i++) {
                                         createClassInput(i, classes[i], true);
                                     }
                                     createClassInput(classes.length, "", true);
@@ -752,9 +753,9 @@
         },
         oneditsave: function () {
             const node = this;
-            var classesInput = document.getElementById("node-input-classes");
-            var host = window.location.hostname;
-            var port = 80;
+            const classesInput = document.getElementById("node-input-classes");
+            let host = window.location.hostname;
+            let port = 80;
             RED.nodes.eachConfig(function (c) {
                 if (c.id === node.client) {
                     host = c.host ? c.host : host;
@@ -766,10 +767,10 @@
                 host = window.location.hostname;
             }
 
-            var uploadFile = document.getElementById("upload-file");
+            const uploadFile = document.getElementById("upload-file");
             if (uploadFile.files.length > 0) {
-                var file = uploadFile.files[0];
-                var info = {
+                const file = uploadFile.files[0];
+                const info = {
                     model_id: "0",
                     model_name: file.name,
                     classes: classesInput.value.split(",").map((c) => c.trim()),
@@ -787,7 +788,7 @@
                     .then((result) => console.log(result))
                     .catch((error) => console.log("error", error));
             } else if (node.modelInfo || node.infoChanged) {
-                let info = JSON.parse(node.modelInfo);
+                const info = JSON.parse(node.modelInfo);
                 const formData = new FormData();
                 if (node.modelFile) {
                     formData.append("model_file", node.modelFile);

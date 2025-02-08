@@ -7,10 +7,10 @@ module.exports = function (RED) {
             storage: config.storage,
             slice: +config.slice,
             duration: +config.duration * 60,
-            enabled: config.start
-        }
+            enabled: config.start,
+        };
 
-        node.on('input', function (msg) {
+        node.on("input", function (msg) {
             if (msg.hasOwnProperty("enabled")) {
                 node.client.request(node.id, "enabled", msg.enabled);
             }
@@ -18,13 +18,13 @@ module.exports = function (RED) {
 
         node.message = function (msg) {
             node.send(msg);
-        }
+        };
 
         if (node.client) {
             node.client.register(node);
         }
 
-        node.on('close', function (removed, done) {
+        node.on("close", function (removed, done) {
             if (node.client) {
                 node.client.deregister(node, done, removed);
                 node.client = null;
@@ -34,4 +34,4 @@ module.exports = function (RED) {
     }
 
     RED.nodes.registerType("save", SaveNode);
-}
+};

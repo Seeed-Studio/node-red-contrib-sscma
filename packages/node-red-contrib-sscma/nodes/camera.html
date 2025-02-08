@@ -13,6 +13,21 @@
         </label>
         <input type="text" id="node-input-client" />
     </div>
+    <div class="form-row">
+        <label for="node-input-audio">
+            <i class="fa fa-microphone"></i>
+            Audio
+        </label>
+        <input type="checkbox" id="node-input-audio" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-volume">
+            <i class="fa fa-sliders"></i>
+            volume
+        </label>
+        <input type="range" id="node-input-volume" min="0" max="100" step="1" value="80" style="width: 60%;" />
+        <span id="volume-value"></span>
+    </div>
 </script>
 
 <script type="text/javascript">
@@ -22,6 +37,8 @@
         defaults: {
             option: { value: 0, required: true },
             client: { type: "sscma", required: true, label: RED._("sscma") },
+            audio: { value: true, required: true },
+            volume: { value: 80, required: true },
         },
         inputs: 1,
         outputs: 1,
@@ -29,7 +46,30 @@
         label: function () {
             return this.name || "camera";
         },
-        oneditprepare: function () {},
+        oneditprepare: function () {
+            const volInput = document.getElementById("node-input-volume");
+            const audioInput = document.getElementById("node-input-audio");
+            const volValue = document.getElementById("volume-value");
+            audioInput.checked = this.audio;
+            volInput.value = this.volume;
+            volValue.textContent = volInput.value;
+            if (!audioInput.checked) {
+                volInput.disabled = true;
+                volValue.disabled = true;
+            }
+            volInput.addEventListener("input", function () {
+                volValue.textContent = volInput.value;
+            });
+            audioInput.addEventListener("change", function () {
+                if (audioInput.checked) {
+                    volInput.disabled = false;
+                    volValue.disabled = false;
+                } else {
+                    volInput.disabled = true;
+                    volValue.disabled = true;
+                }
+            });
+        },
     });
 
     RED.events.on("nodes:add", function (node) {
