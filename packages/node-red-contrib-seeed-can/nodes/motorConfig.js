@@ -2,10 +2,28 @@ const { exec, spawn } = require("child_process");
 const DATA_INDEX = 3;
 const DATA_LENGTH = 8;
 const CAN_BUS_INDEX = 0;
+const CAN_ID_INDEX = 1;
 const CAN_BUS = "can0";
 const YAW_ID = "141";
 const PITCH_ID = "142";
 const GET_CURRENT_COMMAND_DATA = "90.00.00.00.00.00.00.00";
+
+let timer = null; // 用于保存定时器
+let candumpProcess = null; // 用于保存 candump 进程
+function cleanTimer() {
+    if (timer) {
+        clearTimeout(timer);
+        timer = null;
+    }
+}
+
+function cleanCandumpProcess() {
+    if (candumpProcess) {
+        candumpProcess.kill();
+        candumpProcess = null;
+    }
+}
+
 function intToHexString(num) {
     // 确保输入是整数
     num = Math.floor(num);
@@ -33,20 +51,29 @@ function intToHexString(num) {
 function readCurrentData(canId) {
     return new Promise((resolve, reject) => {
         let tempItems = [];
+        const sendCommandParam = `${CAN_BUS} ${canId}#${GET_CURRENT_COMMAND_DATA}`;
         /**
          * @type {import("child_process").ChildProcessWithoutNullStreams}
          */
-        const candumpProcess = spawn("timeout", [0.5, "candump", CAN_BUS], {});
+        candumpProcess = spawn("timeout", [0.5, "candump", CAN_BUS], {});
         candumpProcess.stdout.on("data", (data) => {
-            const lines = data.toString().trim().split("\n");
-            const lastLine = lines[lines.length - 1];
-            const items = lastLine.split(" ").filter((e) => e !== "");
-            if (items.length < DATA_INDEX + DATA_LENGTH) {
-                reject(new Error("No valid data found"));
-            } else if (items[CAN_BUS_INDEX] !== "can0") {
-                reject(new Error("No valid data found"));
-            } else {
-                tempItems = items;
+            try {
+                const lines = data.toString().trim().split("\n");
+                lines.forEach((line) => {
+                    const items = line.split(" ").filter((e) => e !== "");
+                    const dataArr = items.slice(DATA_INDEX);
+                    const resDataStr = `${items[CAN_BUS_INDEX]} ${items[CAN_ID_INDEX]}#${dataArr.join(".")}`;
+                    if (items.length < DATA_INDEX + DATA_LENGTH) {
+                        reject(new Error("No valid data found"));
+                    } else if (items[CAN_BUS_INDEX] !== CAN_BUS) {
+                        reject(new Error("No valid data found"));
+                    }
+                    if (resDataStr !== sendCommandParam) {
+                        tempItems = items;
+                    }
+                });
+            } catch (error) {
+                reject(error);
             }
         });
         candumpProcess.stderr.on("data", (data) => {
@@ -55,11 +82,12 @@ function readCurrentData(canId) {
         candumpProcess.on("error", (error) => {
             reject(error);
         });
-        setTimeout(() => {
-            candumpProcess.kill();
+        timer = setTimeout(() => {
             resolve(tempItems);
-        }, 600);
-        exec(`cansend ${CAN_BUS} ${canId}#${GET_CURRENT_COMMAND_DATA}`, (error, stdout, stderr) => {
+            cleanTimer();
+            cleanCandumpProcess();
+        }, 550);
+        exec(`cansend ${sendCommandParam}`, (error, stdout, stderr) => {
             if (error || stderr) {
                 reject(`exec error: ${error || stderr}`);
             }
@@ -71,81 +99,79 @@ module.exports = function (RED) {
     function MotorConfigNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
-        console.log("MotorConfigNode", config);
-        node.on("input", function (msg) {
-            let inputValue;
-            switch (config["input-type"]) {
-                case "msg":
-                    // 从 msg 对象获取
-                    inputValue = RED.util.getMessageProperty(msg, config.input);
-                    break;
-
-                case "flow":
-                    // 从 flow context 获取
-                    inputValue = node.context().flow.get(config.input);
-                    break;
-
-                case "global":
-                    // 从 global context 获取
-                    inputValue = node.context().global.get(config.input);
-                    break;
-            }
-            if (!inputValue) {
-                node.error("Input value is empty");
-                return;
-            }
-            let outputValue = "";
-            const numInputValue = Number(inputValue);
-            (async () => {
-                try {
-                    let currentData = [];
-                    if (["0", "1"].includes(config.output)) {
-                        currentData = await readCurrentData(YAW_ID);
-                    } else if (["2", "3"].includes(config.output)) {
-                        currentData = await readCurrentData(PITCH_ID);
-                    }
-                    if (currentData.length === 0) {
-                        node.error("No valid data found");
-                        return;
-                    }
-                    const angelHex = currentData.slice(DATA_INDEX + 4, DATA_INDEX + 6).join(".");
-                    const speedHex = currentData.slice(DATA_INDEX + 2, DATA_INDEX + 4).join(".");
-                    const otherHex = currentData.slice(-2).join(".");
-                    switch (config.output) {
-                        case "0":
-                            {
-                                const tempAngelHex = intToHexString(numInputValue * 100);
-                                outputValue = `${YAW_ID}#A4.00.${speedHex}.${tempAngelHex}.${otherHex}`;
-                            }
-                            break;
-                        case "1":
-                            {
-                                const tempSpeedHex = intToHexString(numInputValue);
-                                outputValue = `${YAW_ID}#A4.00.${tempSpeedHex}.${angelHex}.${otherHex}`;
-                            }
-                            break;
-                        case "2":
-                            {
-                                const tempAngelHex = intToHexString(numInputValue * 100);
-                                outputValue = `${PITCH_ID}#A4.00.${speedHex}.${tempAngelHex}.${otherHex}`;
-                            }
-                            break;
-                        case "3":
-                            {
-                                const tempSpeedHex = intToHexString(numInputValue);
-                                outputValue = `${PITCH_ID}#A4.00.${tempSpeedHex}.${angelHex}.${otherHex}`;
-                            }
-                            break;
-                    }
-                    if (!outputValue) {
-                        node.error("Invalid output value");
-                        return;
-                    }
-                    node.send({ payload: outputValue });
-                } catch (error) {
-                    node.error(`Error reading current data: ${error.message}`);
+        node.on("input", async function (msg) {
+            try {
+                // 简化输入值获取
+                const inputSources = {
+                    msg: () => RED.util.getMessageProperty(msg, config.input),
+                    flow: () => node.context().flow.get(config.input),
+                    global: () => node.context().global.get(config.input),
+                };
+                const inputValue = inputSources[config["input-type"]]?.();
+                if (!inputValue) {
+                    node.error("Input value is empty");
+                    return;
                 }
-            })();
+                const numInputValue = Number(inputValue);
+                // 映射输出类型到电机ID
+                const motorIdMap = {
+                    0: YAW_ID,
+                    1: YAW_ID,
+                    2: PITCH_ID,
+                    3: PITCH_ID,
+                };
+                // 获取当前数据
+                const motorId = motorIdMap[config.output];
+                const currentData = await readCurrentData(motorId);
+                if (currentData.length === 0) {
+                    node.error("No valid data found");
+                    return;
+                }
+                // 提取数据
+                const angelHex = currentData.slice(DATA_INDEX + 4, DATA_INDEX + 6).join(".");
+                const speedHex = currentData.slice(DATA_INDEX + 2, DATA_INDEX + 4).join(".");
+                // 构建输出值
+                const outputConfig = {
+                    0: () => ({
+                        id: YAW_ID,
+                        value: intToHexString(numInputValue * 100),
+                        useSpeed: true,
+                    }),
+                    1: () => ({
+                        id: YAW_ID,
+                        value: intToHexString(numInputValue),
+                        useSpeed: false,
+                    }),
+                    2: () => ({
+                        id: PITCH_ID,
+                        value: intToHexString(numInputValue * 100),
+                        useSpeed: true,
+                    }),
+                    3: () => ({
+                        id: PITCH_ID,
+                        value: intToHexString(numInputValue),
+                        useSpeed: false,
+                    }),
+                };
+                const tempConfig = outputConfig[config.output]?.();
+                if (!tempConfig) {
+                    node.error("Invalid output configuration");
+                    return;
+                }
+                // 构建输出字符串
+                const outputValue = tempConfig.useSpeed
+                    ? `${tempConfig.id}#A4.00.${speedHex}.${tempConfig.value}.00.00`
+                    : `${tempConfig.id}#A4.00.${tempConfig.value}.${angelHex}.00.00`;
+
+                node.send({ payload: outputValue });
+            } catch (error) {
+                node.error(`Error processing: ${error.message}`);
+            }
+        });
+
+        node.on("close", () => {
+            cleanTimer();
+            cleanCandumpProcess();
         });
     }
 

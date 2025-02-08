@@ -4,6 +4,13 @@ const { DATA_INDEX, DATA_LENGTH, CAN_BUS_INDEX, CAN_ID_INDEX } = require("../uti
 const CommandExecutor = require("../utils/CommandExecutor");
 
 module.exports = function (RED) {
+    let timer = null;
+    function cleanTimer() {
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    }
     function ResponseNode(config) {
         RED.nodes.createNode(this, config);
         const client = RED.nodes.getNode(config.client);
@@ -12,45 +19,46 @@ module.exports = function (RED) {
         node.on("input", function (msg) {
             try {
                 const data = msg.payload;
+                const sendCommandParam = `${client.can.interface} ${data}`;
                 const { id, items: inputItems } = checkCanPayloadInput(data, node);
-
+                let receiveData = [];
                 commandExecutor.on("data", (stdType, data) => {
                     if (stdType === "stderr") {
                         node.error(`candump stderr: ${data}`);
                         return;
                     }
-                    const lines = data.toString().split("\n");
+                    const lines = data.toString().trim().split("\n");
                     lines.forEach((line) => {
                         if (!line) {
                             return;
                         }
-                        try {
-                            const items = line.split(" ").filter((e) => e !== "");
-                            if (items.length < DATA_INDEX + DATA_LENGTH) {
-                                return;
-                            }
-                            if (items[CAN_BUS_INDEX] !== client.can.interface) {
-                                return;
-                            }
-                            if (items[CAN_ID_INDEX] !== id) {
-                                return;
-                            }
-                            if (inputItems[0] !== items[DATA_INDEX]) {
-                                return;
-                            }
-                            node.send({ payload: { id, data: items.slice(DATA_INDEX) } });
-                        } catch (error) {
-                            node.error(`Error: ${error.message}`);
+                        const items = line.split(" ").filter((e) => e !== "");
+                        const isValidData =
+                            items.length >= DATA_INDEX + DATA_LENGTH &&
+                            items[CAN_BUS_INDEX] === client.can.interface &&
+                            items[CAN_ID_INDEX] === id &&
+                            inputItems[0] === items[DATA_INDEX];
+
+                        if (!isValidData) return;
+                        const dataArr = items.slice(DATA_INDEX);
+                        const resDataStr = `${items[CAN_BUS_INDEX]} ${items[CAN_ID_INDEX]}#${dataArr.join(".")}`;
+                        if (resDataStr !== sendCommandParam) {
+                            receiveData = dataArr;
                         }
                     });
                 });
+
                 commandExecutor.on("error", (error) => {
                     node.error(`candump error: ${error.message}`);
                 });
 
                 commandExecutor.start();
-
-                exec(`cansend ${client.can.interface} ${data}`, (error, _, stderr) => {
+                timer = setTimeout(() => {
+                    node.send({ payload: { id, data: receiveData } });
+                    cleanTimer();
+                    commandExecutor.stop();
+                }, 550);
+                exec(`cansend ${sendCommandParam}`, (error, _, stderr) => {
                     if (error) {
                         node.error(`Error sending CAN message: ${error.message}`);
                         this.status({ fill: "red", shape: "ring", text: "Fail to send" });
@@ -70,6 +78,7 @@ module.exports = function (RED) {
 
         node.on("close", function () {
             commandExecutor.close();
+            cleanTimer();
         });
     }
 
