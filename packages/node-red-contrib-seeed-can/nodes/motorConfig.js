@@ -7,7 +7,7 @@ const CAN_BUS = "can0";
 const YAW_ID = "141";
 const PITCH_ID = "142";
 const GET_CURRENT_STATUS_COMMAND_24 = "9C.00.00.00.00.00.00.00";
-const DEFAULT_SPEED = "2C,01";
+const DEFAULT_SPEED = "2C.01";
 const CURRENT_SPEED_KEY = "can$$currentSpeed";
 
 let timer = null; // 用于保存定时器
