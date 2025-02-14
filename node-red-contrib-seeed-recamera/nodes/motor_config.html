@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="Motor Config">
+<script type="text/html" data-template-name="motor-config">
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
@@ -24,18 +24,20 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType("Motor Config", {
-        category: "sscma",
-        color: "#C7E9C0",
+    RED.nodes.registerType("motor-config", {
+        category: "reCamera",
+        color: "#C6D09C",
         defaults: {
             name: { value: "" },
             input: { value: "", required: true },
             "input-type": { value: "msg" },
-            output: { required: true, value: "" },
+            output: { required: true, value: "0" },
+            outputs: { value: 1 },
         },
         inputs: 1,
         outputs: 1,
         icon: "font-awesome/fa-wrench",
+        paletteLabel: "Motor Config",
         label: function () {
             return this.name || "Motor Config";
         },
@@ -51,9 +53,9 @@
                     {
                         value: "output",
                         options: [
-                            { value: "0", label: "Yaw axis angel (Left and right)" },
+                            { value: "0", label: "Yaw axis angle (Left and right)" },
                             { value: "1", label: "Yaw axis speed (Left and right)" },
-                            { value: "2", label: "Pitch axis angel (Up and down)" },
+                            { value: "2", label: "Pitch axis angle (Up and down)" },
                             { value: "3", label: "Pitch axis speed (Up and down)" },
                         ],
                     },
@@ -64,7 +66,8 @@
         oneditsave: function () {
             this.output = $("#node-input-output").typedInput("value");
             this.input = $("#node-input-input").typedInput("value");
+            this.outputs = this.output === "1" || this.output === "3" ? 0 : 1;
         },
     });
 </script>
-<script type="text/html" data-help-name="Motor Config"></script>
+<script type="text/html" data-help-name="motor-config"></script>

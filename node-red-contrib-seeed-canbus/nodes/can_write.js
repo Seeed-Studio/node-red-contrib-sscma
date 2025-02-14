@@ -2,7 +2,7 @@ const { exec } = require("child_process");
 const { checkCanPayloadInput } = require("../utils/check");
 
 module.exports = function (RED) {
-    function WriteNode(config) {
+    function CanWriteNode(config) {
         RED.nodes.createNode(this, config);
         const client = RED.nodes.getNode(config.client);
         const node = this;
@@ -29,5 +29,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("CAN out", WriteNode);
+    RED.nodes.registerType("can-write", CanWriteNode);
 };

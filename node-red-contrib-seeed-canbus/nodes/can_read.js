@@ -1,7 +1,7 @@
 const { DATA_INDEX, DATA_LENGTH, CAN_BUS_INDEX, CAN_ID_INDEX } = require("../utils/constants");
 
 module.exports = function (RED) {
-    function ReadNode(config) {
+    function CanReadNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
 
@@ -45,7 +45,7 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("CAN in", ReadNode, {
+    RED.nodes.registerType("can-read", CanReadNode, {
         defaults: {
             name: { value: "" },
             canId: { value: "", required: true },

@@ -4,14 +4,14 @@ const { DATA_INDEX, DATA_LENGTH, CAN_BUS_INDEX, CAN_ID_INDEX } = require("../uti
 const CommandExecutor = require("../utils/CommandExecutor");
 
 module.exports = function (RED) {
-    let timer = null;
-    function cleanTimer() {
-        if (timer) {
-            clearTimeout(timer);
-            timer = null;
+    function CanResponseNode(config) {
+        let timer = null;
+        function cleanTimer() {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
         }
-    }
-    function ResponseNode(config) {
         RED.nodes.createNode(this, config);
         const client = RED.nodes.getNode(config.client);
         const node = this;
@@ -82,5 +82,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("CAN response", ResponseNode);
+    RED.nodes.registerType("can-response", CanResponseNode);
 };

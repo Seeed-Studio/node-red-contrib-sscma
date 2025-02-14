@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="CAN in">
+<script type="text/html" data-template-name="can-read">
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
@@ -96,12 +96,12 @@
 </style>
 
 <script type="text/javascript">
-    RED.nodes.registerType("CAN in", {
-        category: "CANBus",
-        color: "#a6bbcf",
+    RED.nodes.registerType("can-read", {
+        category: "CAN Bus",
+        color: "#A6D996",
         defaults: {
             name: { value: "" },
-            client: { type: "can", required: true, label: RED._("can") },
+            client: { type: "can-config", required: true },
             filter: { value: false },
             canId: { value: "" },
             rules: { value: [{ index: 0, value: "" }] },
@@ -110,8 +110,9 @@
         inputs: 0,
         outputs: 1,
         icon: "font-awesome/fa-circle-o-notch",
+        paletteLabel: "CAN read",
         label: function () {
-            return this.name || "CAN in";
+            return this.name || "CAN read";
         },
         oneditprepare: function () {
             const node = this;

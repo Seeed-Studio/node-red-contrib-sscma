@@ -14,8 +14,7 @@
             "save": "nodes/save.js",
             "stream": "nodes/stream.js",
             "preview": "nodes/preview.js",
-            "sscma": "nodes/sscma.js",
-            "light": "nodes/light.js"
+            "sscma": "nodes/sscma.js"
         }
     },
     "dependencies": {

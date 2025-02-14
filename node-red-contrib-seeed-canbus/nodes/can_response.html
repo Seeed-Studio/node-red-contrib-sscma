@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="CAN out">
+<script type="text/html" data-template-name="can-response">
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
@@ -17,21 +17,22 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType("CAN out", {
-        category: "CANBus",
-        color: "#C7E9C0",
+    RED.nodes.registerType("can-response", {
+        category: "CAN Bus",
+        color: "#A6D996",
         defaults: {
             name: { value: "" },
-            client: { type: "can", required: true, label: RED._("can") },
+            client: { type: "can-config", required: true, label: RED._("can-config") },
         },
         inputs: 1,
-        outputs: 0,
-        icon: "font-awesome/fa-crosshairs",
+        outputs: 1,
+        icon: "font-awesome/fa-random",
+        paletteLabel: "CAN response",
         label: function () {
-            return this.name || "CAN out";
+            return this.name || "CAN response";
         },
         oneditprepare: function () {},
         oneditsave: function () {},
     });
 </script>
-<script type="text/html" data-help-name="CAN out"></script>
+<script type="text/html" data-help-name="can-response"></script>

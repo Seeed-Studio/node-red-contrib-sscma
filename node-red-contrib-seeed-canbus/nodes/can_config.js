@@ -5,7 +5,7 @@ const runCommand = require("../utils/runCommand");
 
 module.exports = function (RED) {
     const listeners = {};
-    function CanNode(config) {
+    function CanConfigNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
         node.can = config;
@@ -26,7 +26,7 @@ module.exports = function (RED) {
             return usingNodes;
         }
 
-        const readUsed = findSpecificTypeNodes("read");
+        const readUsed = findSpecificTypeNodes("CAN read");
 
         const commandExecutor = new CommandExecutor("candump", [config.interface]);
 
@@ -81,5 +81,5 @@ module.exports = function (RED) {
         });
     });
 
-    RED.nodes.registerType("can", CanNode);
+    RED.nodes.registerType("can-config", CanConfigNode);
 };
