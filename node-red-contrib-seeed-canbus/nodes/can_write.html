@@ -1,0 +1,38 @@
+<script type="text/html" data-template-name="can-write">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Node Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            <span>Client</span>
+        </label>
+        <input type="text" id="node-input-client" />
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("can-write", {
+        category: "CAN Bus",
+        color: "#A6D996",
+        defaults: {
+            name: { value: "" },
+            client: { type: "can-config", required: true, label: RED._("can-config") },
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "font-awesome/fa-crosshairs",
+        paletteLabel: "CAN write",
+        label: function () {
+            return this.name || "CAN write";
+        },
+        oneditprepare: function () {},
+        oneditsave: function () {},
+    });
+</script>
+<script type="text/html" data-help-name="can-write"></script>

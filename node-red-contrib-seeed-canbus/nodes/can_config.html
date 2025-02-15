@@ -1,0 +1,80 @@
+<script type="text/html" data-template-name="can-config">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Label
+        </label>
+        <input type="text" id="node-config-input-name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-exchange"></i>
+            CAN Bus
+        </label>
+        <input type="text" id="node-config-input-interface" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tasks"></i>
+            Baud rate
+        </label>
+        <input type="text" id="node-config-input-baud" />
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("can-config", {
+        category: "config",
+        defaults: {
+            name: { value: "" },
+            baud: { value: "1000000", required: true },
+            interface: { value: "", required: true },
+        },
+        label: function () {
+            return this.name || "can";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $.get("ifconfig?interfaceName=can", function (interfaceNames) {
+                $("#node-config-input-interface").typedInput({
+                    types: [
+                        {
+                            value: "interface",
+                            options: Array.isArray(interfaceNames) ? interfaceNames.map((e) => ({ label: e, value: e })) : [],
+                        },
+                    ],
+                });
+                $("#node-config-input-interface").typedInput("value", node.interface);
+            });
+            $("#node-config-input-baud").typedInput({
+                types: [
+                    {
+                        value: "baud",
+                        options: [
+                            { label: "5k bps", value: "5000" },
+                            { label: "10k bps", value: "10000" },
+                            { label: "20k bps", value: "20000" },
+                            { label: "40k bps", value: "40000" },
+                            { label: "50k bps", value: "50000" },
+                            { label: "80k bps", value: "80000" },
+                            { label: "100k bps", value: "100000" },
+                            { label: "125k bps", value: "125000" },
+                            { label: "200k bps", value: "200000" },
+                            { label: "250k bps", value: "250000" },
+                            { label: "500k bps", value: "500000" },
+                            { label: "666k bps", value: "666000" },
+                            { label: "800k bps", value: "800000" },
+                            { label: "1000k bps", value: "1000000" },
+                        ],
+                    },
+                ],
+            });
+            $("#node-config-input-baud").typedInput("value", node.baud);
+        },
+        oneditsave: function () {
+            this.baud = $("#node-config-input-baud").typedInput("value");
+            this.interface = $("#node-config-input-interface").typedInput("value");
+            this.name = $("#node-config-input-name").val();
+        },
+    });
+</script>

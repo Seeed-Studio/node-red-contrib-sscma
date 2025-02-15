@@ -1,7 +1,7 @@
 module.exports = function (RED) {
     "use strict";
     const { MsgType } = require("./constants");
-    var mqtt = require("mqtt");
+    const mqtt = require("mqtt");
 
     function updateStatus(node, allNodes) {
         let setStatus = setStatusDisconnected;
@@ -15,7 +15,7 @@ module.exports = function (RED) {
 
     function setStatusDisconnected(node, allNodes) {
         if (allNodes) {
-            for (var id in node.users) {
+            for (const id in node.users) {
                 node.users[id].status({ fill: "red", shape: "ring", text: "node-red:common.status.disconnected" });
             }
         } else {
@@ -25,7 +25,7 @@ module.exports = function (RED) {
 
     function setStatusConnecting(node, allNodes) {
         if (allNodes) {
-            for (var id in node.users) {
+            for (const id in node.users) {
                 node.users[id].status({ fill: "yellow", shape: "ring", text: "node-red:common.status.connecting" });
             }
         } else {
@@ -35,7 +35,7 @@ module.exports = function (RED) {
 
     function setStatusConnected(node, allNodes) {
         if (allNodes) {
-            for (var id in node.users) {
+            for (const id in node.users) {
                 node.users[id].status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
             }
         } else {
@@ -72,14 +72,14 @@ module.exports = function (RED) {
                 }
                 node.request("", "clear", "");
             }
-            let dependencies = [];
+            const dependencies = [];
             RED.nodes.eachNode(function (n) {
                 if (n.wires != undefined) {
                     n.wires.forEach((wires) => {
-                        var id = n.id;
+                        let id = n.id;
                         if (Node.id.includes("-")) {
                             // it is a subflow node
-                            var subflow = RED.nodes.getNode(Node.z);
+                            const subflow = RED.nodes.getNode(Node.z);
                             if (subflow.node.type === "subflow:" + n.z) {
                                 id = Node.z + "-" + n.id;
                             }
@@ -95,14 +95,14 @@ module.exports = function (RED) {
                 }
             });
             // only add wires if it is a sscma node
-            let dependents = [];
+            const dependents = [];
             Node.wires.forEach((wires) => {
                 wires.forEach((wire) => {
                     RED.nodes.eachNode(function (n) {
-                        var id = n.id;
+                        let id = n.id;
                         if (Node.id.includes("-")) {
                             // it is a subflow node
-                            var subflow = RED.nodes.getNode(Node.z);
+                            const subflow = RED.nodes.getNode(Node.z);
                             if (subflow.node.type === "subflow:" + n.z) {
                                 id = Node.z + "-" + n.id;
                             }
@@ -167,9 +167,9 @@ module.exports = function (RED) {
                         callbackDone = true;
                         //setStatusConnected(node, true);
                         // Re-subscribe to stored topics
-                        for (var s in node.subscriptions) {
+                        for (const s in node.subscriptions) {
                             if (node.subscriptions.hasOwnProperty(s)) {
-                                for (var r in node.subscriptions[s]) {
+                                for (const r in node.subscriptions[s]) {
                                     if (node.subscriptions[s].hasOwnProperty(r)) {
                                         node.subscribe(node.subscriptions[s][r]);
                                     }
@@ -196,8 +196,7 @@ module.exports = function (RED) {
                                     } else {
                                         node.users[id].status({ fill: "gray", shape: "dot", text: "idle" });
                                     }
-                                }
-                                else if (payload.code == 0) {
+                                } else if (payload.code == 0) {
                                     if (node.users[id].code != 0) {
                                         node.users[id].status({ fill: "green", shape: "ring", text: "node-red:common.status.connected" });
                                     }
@@ -205,7 +204,7 @@ module.exports = function (RED) {
                                     node.users[id].status({ fill: "red", shape: "ring", text: payload.data });
                                 }
                                 node.users[id].code = payload.code;
-                                var msg = {
+                                const msg = {
                                     payload: payload,
                                 };
                                 node.users[id].message(msg);
@@ -264,7 +263,7 @@ module.exports = function (RED) {
              * @param {number} ms The time to wait for the client to end
              * @returns
              */
-            let waitEnd = (client, ms) => {
+            const waitEnd = (client, ms) => {
                 return new Promise((resolve, reject) => {
                     node.closing = true;
                     if (!client) {

@@ -1,0 +1,73 @@
+<script type="text/html" data-template-name="motor-config">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Node Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-arrow-circle-right"></i>
+            Input
+        </label>
+        <input type="text" id="node-input-input" />
+        <input type="hidden" id="node-input-input-type" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-arrow-circle-left"></i>
+            Output to
+        </label>
+        <input type="text" id="node-input-output" />
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("motor-config", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" },
+            input: { value: "", required: true },
+            "input-type": { value: "msg" },
+            output: { required: true, value: "0" },
+            outputs: { value: 1 },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-wrench",
+        paletteLabel: "Motor Config",
+        label: function () {
+            return this.name || "Motor Config";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $("#node-input-input").typedInput({
+                type: "msg",
+                types: ["msg", "flow", "global"],
+                typeField: "#node-input-input-type",
+            });
+            $("#node-input-output").typedInput({
+                types: [
+                    {
+                        value: "output",
+                        options: [
+                            { value: "0", label: "Yaw axis angle (Left and right)" },
+                            { value: "1", label: "Yaw axis speed (Left and right)" },
+                            { value: "2", label: "Pitch axis angle (Up and down)" },
+                            { value: "3", label: "Pitch axis speed (Up and down)" },
+                        ],
+                    },
+                ],
+            });
+            $("#node-input-output").typedInput("value", node.output);
+        },
+        oneditsave: function () {
+            this.output = $("#node-input-output").typedInput("value");
+            this.input = $("#node-input-input").typedInput("value");
+            this.outputs = this.output === "1" || this.output === "3" ? 0 : 1;
+        },
+    });
+</script>
+<script type="text/html" data-help-name="motor-config"></script>

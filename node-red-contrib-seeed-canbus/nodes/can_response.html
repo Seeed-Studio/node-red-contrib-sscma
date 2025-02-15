@@ -1,0 +1,38 @@
+<script type="text/html" data-template-name="can-response">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Node Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            <span>Client</span>
+        </label>
+        <input type="text" id="node-input-client" />
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("can-response", {
+        category: "CAN Bus",
+        color: "#A6D996",
+        defaults: {
+            name: { value: "" },
+            client: { type: "can-config", required: true, label: RED._("can-config") },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-random",
+        paletteLabel: "CAN response",
+        label: function () {
+            return this.name || "CAN response";
+        },
+        oneditprepare: function () {},
+        oneditsave: function () {},
+    });
+</script>
+<script type="text/html" data-help-name="can-response"></script>

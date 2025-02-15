@@ -65,7 +65,7 @@
 
     (function () {
         RED.nodes.registerType("preview", {
-            category: "sscma",
+            category: "Vision AI",
             color: "#77C2A4",
             defaults: {
                 name: { value: "" },
@@ -91,7 +91,7 @@
                 },
                 onclick: function () {
                     const label = this.name || "preview";
-                    var node = this;
+                    const node = this;
                     $.ajax({
                         url: `image-output/${this.id}/${this.active ? "enable" : "disable"}`,
                         type: "POST",
@@ -116,7 +116,7 @@
 
         const latestImages = {};
 
-        var remove = function (nodeid) {
+        const remove = function (nodeid) {
             const $img = document.getElementById("image-output-img-" + nodeid);
             const $group = document.getElementById("image-output-group-" + nodeid);
 
@@ -125,7 +125,7 @@
             delete latestImages[nodeid];
         };
 
-        var render = function (id, data) {
+        const render = function (id, data) {
             const $container = document.getElementById(id);
             if (!$container) return;
 
@@ -333,7 +333,7 @@
                 data.keypoints.forEach((keypoint, i) => {
                     const box = keypoint[0];
                     const keypoints = keypoint[1];
-                    let points = new Set();
+                    const points = new Set();
                     if (box?.length === 6) {
                         const [x, y, w, h, score, tar] = box;
                         const color = getColor(tar);
