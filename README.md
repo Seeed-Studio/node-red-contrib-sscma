@@ -1,8 +1,8 @@
 ![Platform Node-RED](https://img.shields.io/badge/Platform-Node--RED-red.png)
 
-# node-red-contrib-sscma
+# node-red-contrib-nodes
 
-`node-red-contrib-sscma` is a Node-RED node component designed to facilitate the quick deployment of AI models through flow-based programming. This allows for seamless integration of AI model outputs with other devices, enabling smart automation and intelligent workflows.
+`node-red-contrib-nodes` is a comprehensive Node-RED repository under the Seeed-Studio organization, hosting various Node-RED nodes for diverse functionalities, including AI model deployment, device integration, and IoT ecosystem interconnection.
 
 ## Features
 
@@ -13,13 +13,17 @@
 
 ## Installation
 
-To install the package in Node-RED, run the following command:
-
-```bash
-npm install node-red-contrib-sscma
+To install any of the packages in Node-RED, run the following command:
 ```
-
+cd <package-name>
+npm install <package-name>
+```
 Or install directly through the Node-RED interface.
+## Packages
+
+- **node-red-contrib-sscma**: For AI model deployment.
+- **node-red-contrib-seeed-canbus**: For CAN bus integration.
+- **node-red-contrib-seeed-recamera**: For camera interface integration.
 
 ## Getting Started
 
