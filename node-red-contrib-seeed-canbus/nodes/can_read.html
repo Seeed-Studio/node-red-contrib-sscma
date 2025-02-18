@@ -189,3 +189,47 @@
         },
     });
 </script>
+<script type="text/markdown" data-help-name="can-read">
+### CAN read
+
+Send out all the input data from CANBus.
+
+- Node Name: Custom naming.
+- CAN Bus: Configure and select CAN interface and baud rate.
+
+The CAN id and data parameters can be filled in to filter the contents of the accepted packets.
+
+Select the `Filter` option.
+
+Fill in the `CAN id` and `data[num]` data to filter the input CAN data frame.
+
+#### Output
+
+The output format is json package:
+
+```json
+{
+    id:"",
+    data:""
+}
+```
+
+
+
+For example:
+
+```json
+{
+    id:"141",
+    data:
+      0: "90"
+      1: "00"
+      2: "AB"
+      3: "02"
+      4: "3C"
+      5: "4C"
+      6: "91"
+      7: "49"
+}
+````
+</script>

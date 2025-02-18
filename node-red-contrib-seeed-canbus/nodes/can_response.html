@@ -39,4 +39,28 @@
         oneditsave: function () {},
     });
 </script>
-<script type="text/html" data-help-name="can-response"></script>
+<script type="text/markdown" data-help-name="can-response">
+### CAN response
+
+Read the response of the specified CAN request frame in CAN response node.
+
+#### Input
+
+CAN standard frame format:
+
+`ID#data[0].data[1].data[2].data[3].data[4].data[5].data[6].data[7]`
+
+For example: `141#A4.00.2C.01.50.46.00.00`
+
+#### Output
+
+The data returned by the reply frame is the content of the query frame.
+
+Filter reply frames using CAN_id and data[0].
+
+For example:
+
+Inquiry frame(Input): `141#90.00.00.00.00.00.00.00`
+
+Reply frame(Output):`141#90.00.AB.02.3C.4C.91.49`
+</script>
