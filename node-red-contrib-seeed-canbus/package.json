@@ -1,31 +1,31 @@
 {
-  "name": "node-red-contrib-seeed-canbus",
-  "version": "0.0.2",
-  "description": "Node-RED nodes for Gimbal",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/seeed-studio/node-red-contrib-sscma.git"
-  },
-  "node-red": {
-    "version": ">=2.0.0",
-    "nodes": {
-      "can-read": "nodes/can_read.js",
-      "can-write": "nodes/can_write.js",
-      "can-config": "nodes/can_config.js",
-      "can-response": "nodes/can_response.js"
+    "name": "node-red-contrib-seeed-canbus",
+    "version": "0.0.3",
+    "description": "Node-RED nodes for Gimbal",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/seeed-studio/node-red-contrib-sscma.git"
+    },
+    "node-red": {
+        "version": ">=2.0.0",
+        "nodes": {
+            "can-read": "nodes/can_read.js",
+            "can-write": "nodes/can_write.js",
+            "can-config": "nodes/can_config.js",
+            "can-response": "nodes/can_response.js"
+        }
+    },
+    "license": "Apache-2.0",
+    "keywords": [
+        "node-red",
+        "canbus",
+        "gimbal",
+        "recamera"
+    ],
+    "engines": {
+        "node": ">=12"
+    },
+    "devDependencies": {
+        "@types/node-red": "^1.3.5"
     }
-  },
-  "license": "Apache-2.0",
-  "keywords": [
-    "node-red",
-    "canbus",
-    "gimbal",
-    "recamera"
-  ],
-  "engines": {
-    "node": ">=12"
-  },
-  "devDependencies": {
-    "@types/node-red": "^1.3.5"
-  }
 }

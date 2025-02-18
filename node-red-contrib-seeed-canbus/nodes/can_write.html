@@ -2,7 +2,7 @@
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
-            Node Name
+            Name
         </label>
         <input type="text" id="node-input-name" />
     </div>
@@ -22,7 +22,11 @@
         color: "#A6D996",
         defaults: {
             name: { value: "" },
-            client: { type: "can-config", required: true, label: RED._("can-config") },
+            client: {
+                type: "can-config",
+                required: true,
+                label: RED._("can-config"),
+            },
         },
         inputs: 1,
         outputs: 0,

@@ -24,7 +24,11 @@ module.exports = function (RED) {
                     this.status({ fill: "green", shape: "dot", text: "Connected" });
                 });
             } catch (error) {
-                this.status({ fill: "red", shape: "ring", text: error?.message ?? "Error" });
+                this.status({
+                    fill: "red",
+                    shape: "ring",
+                    text: error?.message ?? "Error",
+                });
             }
         });
     }

@@ -1,126 +1,118 @@
 <script type="text/html" data-template-name="camera">
-  <div class="form-row">
-    <label for="node-input-name">
-      <i class="fa fa-tag"></i>
-      Label
-    </label>
-    <input type="text" id="node-input-name" />
-  </div>
-  <div class="form-row">
-    <label for="node-input-client">
-      <i class="fa fa-globe"></i>
-      Client
-    </label>
-    <input type="text" id="node-input-client" />
-  </div>
-  <div class="form-row">
-    <label for="node-input-audio"><i class="fa fa-microphone"></i> Audio</label>
-    <input type="checkbox" id="node-input-audio" />
-  </div>
-  <div class="form-row">
-    <label for="node-input-volume"><i class="fa fa-sliders"></i> volume</label>
-    <input
-      type="range"
-      id="node-input-volume"
-      min="0"
-      max="100"
-      step="1"
-      value="80"
-      style="width: 60%;"
-    />
-    <span id="volume-value"></span>
-  </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Label
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-client">
+            <i class="fa fa-globe"></i>
+            Client
+        </label>
+        <input type="text" id="node-input-client" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-audio">
+            <i class="fa fa-microphone"></i>
+            Audio
+        </label>
+        <input type="checkbox" id="node-input-audio" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-volume">
+            <i class="fa fa-sliders"></i>
+            volume
+        </label>
+        <input type="range" id="node-input-volume" min="0" max="100" step="1" value="80" style="width: 60%;" />
+        <span id="volume-value"></span>
+    </div>
 </script>
 
 <script type="text/javascript">
-  RED.nodes.registerType("camera", {
-    category: "Vision AI",
-    color: "#B29DDC",
-    defaults: {
-      option: { value: 0, required: true },
-      client: { type: "sscma", required: true, label: RED._("sscma") },
-      audio: { value: true, required: true },
-      volume: { value: 80, required: true },
-    },
-    inputs: 1,
-    outputs: 1,
-    icon: "font-awesome/fa-camera",
-    label: function () {
-      return this.name || "camera";
-    },
-    oneditprepare: function () {
-      var volInput = document.getElementById("node-input-volume");
-      var audioInput = document.getElementById("node-input-audio");
-      var volValue = document.getElementById("volume-value");
-      audioInput.checked = this.audio;
-      volInput.value = this.volume;
-      volValue.textContent = volInput.value;
-      if (!audioInput.checked) {
-        volInput.disabled = true;
-        volValue.disabled = true;
-      }
-      volInput.addEventListener("input", function () {
-        volValue.textContent = volInput.value;
-      });
-      audioInput.addEventListener("change", function () {
-        if (audioInput.checked) {
-          volInput.disabled = false;
-          volValue.disabled = false;
-        } else {
-          volInput.disabled = true;
-          volValue.disabled = true;
-        }
-      });
-    },
-  });
+    RED.nodes.registerType("camera", {
+        category: "Vision AI",
+        color: "#B29DDC",
+        defaults: {
+            option: { value: 0, required: true },
+            client: { type: "sscma", required: true, label: RED._("sscma") },
+            audio: { value: true, required: true },
+            volume: { value: 80, required: true },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-camera",
+        label: function () {
+            return this.name || "camera";
+        },
+        oneditprepare: function () {
+            var volInput = document.getElementById("node-input-volume");
+            var audioInput = document.getElementById("node-input-audio");
+            var volValue = document.getElementById("volume-value");
+            audioInput.checked = this.audio;
+            volInput.value = this.volume;
+            volValue.textContent = volInput.value;
+            if (!audioInput.checked) {
+                volInput.disabled = true;
+                volValue.disabled = true;
+            }
+            volInput.addEventListener("input", function () {
+                volValue.textContent = volInput.value;
+            });
+            audioInput.addEventListener("change", function () {
+                if (audioInput.checked) {
+                    volInput.disabled = false;
+                    volValue.disabled = false;
+                } else {
+                    volInput.disabled = true;
+                    volValue.disabled = true;
+                }
+            });
+        },
+    });
 
-  RED.events.on("nodes:add", function (node) {
-    const existingNodes = RED.nodes.filterNodes({ type: "camera" });
-    if (existingNodes.length > 1) {
-      RED.notify("This node can only be instantiated once.", "error");
-      RED.nodes.remove(node.id);
-    }
-  });
+    RED.events.on("nodes:add", function (node) {
+        const existingNodes = RED.nodes.filterNodes({ type: "camera" });
+        if (existingNodes.length > 1) {
+            RED.notify("This node can only be instantiated once.", "error");
+            RED.nodes.remove(node.id);
+        }
+    });
 </script>
 <script type="text/html" data-help-name="camera">
-  <p>
-    This is the camera node for Seeed SenseCraft Model Assistant hardwares such
-    as reCamera or Pi camera.
-  </p>
+    <p>This is the camera node for Seeed SenseCraft Model Assistant hardwares such as reCamera or Pi camera.</p>
 
-  <h3>AI Detection</h3>
-  <dd>
-    Connect it with
-    <code>model</code>
-    node to achieve AI detection with different models like yolo v5, yolo v8,
-    yolo 11 and so on.
-  </dd>
+    <h3>AI Detection</h3>
+    <dd>
+        Connect it with
+        <code>model</code>
+        node to achieve AI detection with different models like yolo v5, yolo v8, yolo 11 and so on.
+    </dd>
 
-  <h3>Preview</h3>
-  <dd>
-    Connect it with
-    <code>preview</code>
-    node to preview what camera is capturing.
-  </dd>
+    <h3>Preview</h3>
+    <dd>
+        Connect it with
+        <code>preview</code>
+        node to preview what camera is capturing.
+    </dd>
 
-  <h3>Streaming</h3>
-  <dd>
-    Connect it with
-    <code>stream</code>
-    node to activate rstp stream.
-  </dd>
+    <h3>Streaming</h3>
+    <dd>
+        Connect it with
+        <code>stream</code>
+        node to activate rstp stream.
+    </dd>
 
-  <h3>Save</h3>
-  <dd>
-    Connect it with
-    <code>save</code>
-    node to save the desire image or video.
-  </dd>
+    <h3>Save</h3>
+    <dd>
+        Connect it with
+        <code>save</code>
+        node to save the desire image or video.
+    </dd>
 
-  <p style="margin-top: 20px;">
-    More info:
-    <a href="https://github.com/Seeed-Studio/ModelAssistant" target="_blank"
-      >https://github.com/Seeed-Studio/ModelAssistant</a
-    >
-  </p>
+    <p style="margin-top: 20px;">
+        More info:
+        <a href="https://github.com/Seeed-Studio/ModelAssistant" target="_blank">https://github.com/Seeed-Studio/ModelAssistant</a>
+    </p>
 </script>

@@ -32,7 +32,7 @@ module.exports = function (RED) {
                     global: () => node.context().global.get(config.input),
                 };
                 const inputValue = inputSources[config["input-type"]]?.();
-                if (!inputValue) {
+                if (inputValue === undefined || inputValue === null) {
                     node.error("Input value is empty");
                     return;
                 }
