@@ -14,7 +14,7 @@ Or install directly through the Node-RED interface.
 
 Input motor parameters value, and output control motor CAN data frame according to the protocol.
 
-- Node Name: Custom naming.
+- Name: Custom naming.
 - Input: Access node information.
 - Output: Select the controlled motor and motor speed or position.
 
@@ -22,10 +22,12 @@ Input motor parameters value, and output control motor CAN data frame according 
 
 The input data type is number or string.
 
-- The `output to` is chosen to be `Yaw axis angle (Left and right)` is the range : 0-360
-- The `output to` is chosen to be `Yaw axis speed(Left and right)` is the range : 0-360
-- The `output to` is chosen to be `Pitch axis angle (Up and down)` is the range : 0-180
-- The `output to` is chosen to be `Pitch axis speed(Up and down)` is the range : 0-360
+- The `output to` is chosen to be `Yaw Axis Absolute Position (deg)` is the range : 0-360
+- The `output to` is chosen to be `Yaw Axis Relative Offset (deg)` is the range : -360-360
+- The `output to` is chosen to be `Yaw Axis Velocity Setpoint` is the range : 0-360
+- The `output to` is chosen to be `Pitch Axis Absolute Position (deg)` is the range : 0-180
+- The `output to` is chosen to be `Pitch Axis Relative Offset (deg)` is the range : -180-180
+- The `output to` is chosen to be `Pitch Axis Velocity Setpoint` is the range : 0-180
 
 The Angle value controls the position of the device in degrees; The speed value controls how fast the device rotates in dps/LSB.
 

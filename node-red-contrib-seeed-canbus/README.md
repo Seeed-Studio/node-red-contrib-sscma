@@ -38,7 +38,7 @@ sudo apt-get install can-utils
 
 Write data frame to CANBus.
 
-- Node Name: Custom naming.
+- Name: Custom naming.
 - CAN Bus: Configure and select CAN interface and baud rate
 
 #### Input
@@ -54,7 +54,7 @@ For example: `141#A4.00.2C.01.50.46.00.00`
 
 Send out all the input data from CANBus.
 
-- Node Name: Custom naming.
+- Name: Custom naming.
 - CAN Bus: Configure and select CAN interface and baud rate.
 
 The CAN id and data parameters can be filled in to filter the contents of the accepted packets.

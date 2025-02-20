@@ -2,7 +2,7 @@
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
-            Node Name
+            Name
         </label>
         <input type="text" id="node-input-name" />
     </div>
@@ -15,11 +15,48 @@
         <input type="hidden" id="node-input-input-type" />
     </div>
     <div class="form-row">
-        <label for="node-input-name">
+        <label style="width: 100%;">
             <i class="fa fa-arrow-circle-left"></i>
-            Output to
+            Output as motor parameters
         </label>
-        <input type="text" id="node-input-output" />
+    </div>
+    <div class="form-row" style="margin-left: 20px; margin-bottom: 0;">
+        <label style="width: 100%;"><b>Yaw Axis (Left and Right):</b></label>
+    </div>
+    <div class="form-row" style="margin-bottom: 20px;">
+        <div style="margin-left: 10px;">
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="0" />
+                <span>Absolute Position (deg)</span>
+            </div>
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="1" />
+                <span>Relative Offset (deg)</span>
+            </div>
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="2" />
+                <span>Velocity Setpoint</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-row" style="margin-left: 20px; margin-bottom: 0;">
+        <label style="width: 100%;"><b>Pitch Axis (Up and Down):</b></label>
+    </div>
+    <div class="form-row">
+        <div style="margin-left: 10px;">
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="3" />
+                <span>Absolute Position (deg)</span>
+            </div>
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="4" />
+                <span>Relative Offset (deg)</span>
+            </div>
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="5" />
+                <span>Velocity Setpoint</span>
+            </div>
+        </div>
     </div>
 </script>
 
@@ -48,67 +85,56 @@
                 types: ["msg", "flow", "global"],
                 typeField: "#node-input-input-type",
             });
-            $("#node-input-output").typedInput({
-                types: [
-                    {
-                        value: "output",
-                        options: [
-                            { value: "0", label: "Yaw axis angle (Left and right)" },
-                            { value: "1", label: "Yaw axis speed (Left and right)" },
-                            { value: "2", label: "Pitch axis angle (Up and down)" },
-                            { value: "3", label: "Pitch axis speed (Up and down)" },
-                        ],
-                    },
-                ],
-            });
-            $("#node-input-output").typedInput("value", node.output);
+            $(`input[name="node-input-output"][value="${node.output}"]`).prop("checked", true);
         },
         oneditsave: function () {
-            this.output = $("#node-input-output").typedInput("value");
+            this.output = $('input[name="node-input-output"]:checked').val();
             this.input = $("#node-input-input").typedInput("value");
-            this.outputs = this.output === "1" || this.output === "3" ? 0 : 1;
+            this.outputs = this.output === "2" || this.output === "5" ? 0 : 1;
         },
     });
 </script>
 <script type="text/markdown" data-help-name="motor-config">
-### Motor Config
+    ### Motor Config
 
-Input motor parameters value, and output control motor CAN data frame according to the protocol.
+    Input motor parameters value, and output control motor CAN data frame according to the protocol.
 
-- Node Name: Custom naming.
-- Input: Access node information.
-- Output: Select the controlled motor and motor speed or position.
+    -   Name: Custom naming.
+    -   Input: Access node information.
+    -   Output: Select the controlled motor and motor speed or position.
 
-#### Input:
+    #### Input:
 
-The input data type is number or string.
+    The input data type is number or string.
 
-- The `output to` is chosen to be `Yaw axis angle (Left and right)` is the range : 0-360
-- The `output to` is chosen to be `Yaw axis speed(Left and right)` is the range : 0-360
-- The `output to` is chosen to be `Pitch axis angle (Up and down)` is the range : 0-180
-- The `output to` is chosen to be `Pitch axis speed(Up and down)` is the range : 0-360
+    -   The `output to` is chosen to be `Yaw Axis Absolute Position (deg)` is the range : 0-360
+    -   The `output to` is chosen to be `Yaw Axis Relative Offset (deg)` is the range : -360-360
+    -   The `output to` is chosen to be `Yaw Axis Velocity Setpoint` is the range : 0-360
+    -   The `output to` is chosen to be `Pitch Axis Absolute Position (deg)` is the range : 0-180
+    -   The `output to` is chosen to be `Pitch Axis Relative Offset (deg)` is the range : -180-180
+    -   The `output to` is chosen to be `Pitch Axis Velocity Setpoint` is the range : 0-180
 
-The Angle value controls the position of the device in degrees; The speed value controls how fast the device rotates in dps/LSB.
+    The Angle value controls the position of the device in degrees; The speed value controls how fast the device rotates in dps/LSB.
 
-> note: Due to hardware errors, please do not use the configuration at the limit position: 0,180,360 these angles, it will make the motor overload.
+    > note: Due to hardware errors, please do not use the configuration at the limit position: 0,180,360 these angles, it will make the motor overload.
 
-#### Output:
+    #### Output:
 
-Through the incoming speed and Angle instructions, the CAN instruction frame is packaged into a speed closed loop.
+    Through the incoming speed and Angle instructions, the CAN instruction frame is packaged into a speed closed loop.
 
-If no speed value is passed in, the default speed value is 300.
+    If no speed value is passed in, the default speed value is 300.
 
-For example: 
+    For example:
 
-- Yaw axis angle (Left and right): 180
-- Yaw axis speed(Left and right): 300
+    -   Yaw axis angle (Left and right): 180
+    -   Yaw axis speed(Left and right): 300
 
-output : `141#A4.00.2C.01.10.27.00.00`
+    output : `141#A4.00.2C.01.10.27.00.00`
 
-For example: 
+    For example:
 
-- Pitch axis angle (Left and right): 180
-- Pitch axis speed(Left and right): 300
+    -   Pitch axis angle (Left and right): 180
+    -   Pitch axis speed(Left and right): 300
 
-output : `142#A4.00.2C.01.10.27.00.00`
+    output : `142#A4.00.2C.01.10.27.00.00`
 </script>

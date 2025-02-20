@@ -5,17 +5,10 @@ const CommandExecutor = require("../utils/CommandExecutor");
 
 module.exports = function (RED) {
     function CanResponseNode(config) {
-        let timer = null;
-        function cleanTimer() {
-            if (timer) {
-                clearTimeout(timer);
-                timer = null;
-            }
-        }
         RED.nodes.createNode(this, config);
         const client = RED.nodes.getNode(config.client);
         const node = this;
-        const commandExecutor = new CommandExecutor("timeout", [0.5, "candump", client.can.interface]);
+        const commandExecutor = new CommandExecutor("timeout", [0.1, "candump", client.can.interface]);
         node.on("input", function (msg) {
             try {
                 const data = msg.payload;
@@ -44,6 +37,8 @@ module.exports = function (RED) {
                         const resDataStr = `${items[CAN_BUS_INDEX]} ${items[CAN_ID_INDEX]}#${dataArr.join(".")}`;
                         if (resDataStr !== sendCommandParam && inputItems[0] === items[DATA_INDEX]) {
                             receiveData = dataArr;
+                            node.send({ payload: { id, data: receiveData } });
+                            commandExecutor.stop();
                         }
                     });
                 });
@@ -53,11 +48,6 @@ module.exports = function (RED) {
                 });
 
                 commandExecutor.start();
-                timer = setTimeout(() => {
-                    node.send({ payload: { id, data: receiveData } });
-                    cleanTimer();
-                    commandExecutor.stop();
-                }, 550);
                 exec(`cansend ${sendCommandParam}`, (error, _, stderr) => {
                     if (error) {
                         node.error(`Error sending CAN message: ${error.message}`);
@@ -82,7 +72,6 @@ module.exports = function (RED) {
 
         node.on("close", function () {
             commandExecutor.close();
-            cleanTimer();
         });
     }
 
