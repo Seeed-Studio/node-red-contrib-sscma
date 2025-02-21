@@ -26,8 +26,7 @@ module.exports = function (RED) {
             return usingNodes;
         }
 
-        const readUsed = findSpecificTypeNodes("CAN read");
-
+        const readUsed = findSpecificTypeNodes("can-read");
         const commandExecutor = new CommandExecutor("candump", [config.interface]);
 
         commandExecutor.on("data", (stdType, data) => {
@@ -53,13 +52,13 @@ module.exports = function (RED) {
 
         (async () => {
             await runCommand(`ip link set ${config.interface} down`).catch((error) => {
-                node.error(`ip link set ${config.interface} down error: ${error.message}`);
+                // node.error(`ip link set ${config.interface} down error: ${error.message}`);
             });
             await runCommand(`ip link set ${config.interface} up type can bitrate ${config.baud}`).catch((error) => {
-                node.error(`ip link set ${config.interface} up type can bitrate ${config.baud} error: ${error.message}`);
+                // node.error(`ip link set ${config.interface} up type can bitrate ${config.baud} error: ${error.message}`);
             });
             await runCommand(`ip link set ${config.interface} up`).catch((error) => {
-                node.error(`ip link set ${config.interface} up error: ${error.message}`);
+                // node.error(`ip link set ${config.interface} up error: ${error.message}`);
             });
             if (readUsed.length !== 0) {
                 commandExecutor.start().catch((error) => {
