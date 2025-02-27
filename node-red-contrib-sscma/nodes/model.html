@@ -815,56 +815,50 @@
         }
     });
 </script>
-<script type="text/html" data-help-name="model">
-    <p>This is the model node for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.</p>
+<script type="text/markdown data-help-name="model">
+This is the `model node` for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.
 
-    <h3>Supported Model</h3>
-    <p>Freely change models like yolo v5, yolo v8, yolo 11 and so on. You can also enjoy the models from SenseCraft to find the perfect fit for you.</p>
+### Supported Model
+Freely change models like yolo v5, yolo v8, yolo 11 and so on. You can also enjoy the models from SenseCraft to find the perfect fit for you. If you would like to convert your own model to cviformat for reCamera, please visit our [Wiki instruction](https://wiki.seeedstudio.com/recamera_model_conversion/).
 
-    <h3>Inputs</h3>
-    <dl class="message-properties">
-        <dt>
-            payload
-            <span class="property-type">buffer</span>
-        </dt>
-        <dd>
-            Input from the
-            <code>camera</code>
-            node
-        </dd>
-    </dl>
+### Inputs
+- **payload (`buffer`)**: Input from the `camera` node
 
-    <h3>Outputs</h3>
-    <dl class="message-properties">
-        <dt>
-            payload.data
-            <span class="property-type">object</span>
-        </dt>
-        <dd>
-            <p>
-                <b>boxes</b>
-                - array containing detection results with following format:
-            </p>
-            <ul>
-                <li>[0]: center_x</li>
-                <li>[1]: center_y</li>
-                <li>[2]: box_width</li>
-                <li>[3]: box_height</li>
-                <li>[4]: detected object score</li>
-                <li>[5]: detected object class</li>
-            </ul>
-        </dd>
+### Parameters
+- **Base64 Image Output Checkbox**: This checkbox is used to determine whether the base64 image code should be output along with other parameters.
+- **Trace Checkbox**: Enables the tracking mode. When enabled, each detected object will be assigned a unique ID.
+- **Counting Checkbox**: Enables the counting mode. When enabled, the node will output counting information to the console.
+- **Splitter Field**: Used to set the counting line. Draw a line within the box to count the number of objects crossing it.
 
-        <dt>
-            count
-            <span class="property-type">number</span>
-        </dt>
-        <dd>Numbers of images that has been send out since deploy</dd>
+### Output Example
 
-        <dt>
-            image
-            <span class="property-type">string</span>
-        </dt>
-        <dd>The base64 image output, output size is 640×480 pixel</dd>
-    </dl>
+Wire the model node to a debug node to view the output. Here is an example output for the Yolo 11n model:
+
+```json
+{
+    "boxes": [
+    "0": "box_center_x",
+    "1": "box_center_y",
+    "2": "box_width",
+    "3": "box_height",
+    "4": "detected object score",
+    "5": "detected object class ID"
+    ],
+    "count": "//inference numbers",
+    "image": "//base64 image code",
+    "labels": [
+    "0": "class name // e.g. person"
+    ],
+    "perf": [
+    "0": "0 fps //pre-processing fps",
+    "1": "40 ms //inference time",
+    "2": "20 ms //post-processing time"
+    ],
+    "resolution": [
+    "0": 640,
+    "1": 640
+    ]
+}
+```
+    
 </script>

@@ -80,39 +80,24 @@
         }
     });
 </script>
-<script type="text/html" data-help-name="camera">
-    <p>This is the camera node for Seeed SenseCraft Model Assistant hardwares such as reCamera or Pi camera.</p>
+<script type="text/markdown" data-help-name="camera">
+This is the `camera node` for Seeed SenseCraft Model Assistant hardwares such as reCamera or Pi camera.
 
-    <h3>AI Detection</h3>
-    <dd>
-        Connect it with
-        <code>model</code>
-        node to achieve AI detection with different models like yolo v5, yolo v8, yolo 11 and so on.
-    </dd>
+## Input
+Parse in ` msg.enabled = true ` to start camera, and ` msg.enabled = false ` to stop camera.
 
-    <h3>Preview</h3>
-    <dd>
-        Connect it with
-        <code>preview</code>
-        node to preview what camera is capturing.
-    </dd>
+## Output
+### AI Detection
+- Connect it with `model` node to achieve AI detection with different models like yolo v5, yolo v8, yolo 11 and so on.
 
-    <h3>Streaming</h3>
-    <dd>
-        Connect it with
-        <code>stream</code>
-        node to activate rstp stream.
-    </dd>
+### Preview
+- Connect it with `preview` node to preview what camera is capturing.
 
-    <h3>Save</h3>
-    <dd>
-        Connect it with
-        <code>save</code>
-        node to save the desire image or video.
-    </dd>
+### Streaming
+- Connect it with `stream` node to activate rstp stream.
 
-    <p style="margin-top: 20px;">
-        More info:
-        <a href="https://github.com/Seeed-Studio/ModelAssistant" target="_blank">https://github.com/Seeed-Studio/ModelAssistant</a>
-    </p>
+### Save
+- Connect it with `save` node to save the desire image or video.
+
+More info: [https://github.com/Seeed-Studio/ModelAssistant](https://github.com/Seeed-Studio/ModelAssistant)
 </script>

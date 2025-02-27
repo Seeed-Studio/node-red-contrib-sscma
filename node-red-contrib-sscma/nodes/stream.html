@@ -73,8 +73,24 @@
         },
     });
 </script>
-<script type="text/html" data-help-name="stream">
-    <p>This is the Stream node for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.</p>
-    <p>After setting up the RTSP, you can use VLC or other tools to subscript the port 554 for the live stream.</p>
-    <p>Please note the stream does not include audio.</p>
+<script type="text/markdown" data-help-name="stream">
+This is the `Stream node` for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.
+
+### Configuration
+Please also select sscma for the client. 
+
+### Input
+Wire the camera node to the stream node to enable the streaming.
+
+### Parameter
+- Audio: checkbox to enable audio with streaming.
+
+#### Output
+You can then use other applications such as VLC to view the RTSP stream out from reCamera. As an example in the above screenshot, you can use `rtsp://admin:admin@192.168.42.1:554/live` in VLC then you can see the H.264 streaming video.
+
+#### Video Parameter
+- By default, the video parameters are set to 1920x1800 at 30fps.
+
+#### Latency
+The latency varies depending on the end applications you are using. For example, the latency with VLC is 500 ms.
 </script>

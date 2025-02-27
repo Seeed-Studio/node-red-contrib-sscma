@@ -95,19 +95,29 @@
         }
     });
 </script>
-<script type="text/html" data-help-name="save">
-    <p>This is the Save node for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.</p>
+<script type="text/markdown" data-help-name="save">
+This is the `Save node` for Seeed SenseCraft Model Assistant such as reCamera or Pi camera.
 
-    <h3>Slice</h3>
-    <p>This is the time gap between each recording.</p>
+### Configuration
+Please select sscma for the client. 
 
-    <h3>Duration</h3>
-    <p>This is the recording duration of each segment.</p>
+### Input
+Wire the camera node to the save node to enable the saving.
 
-    <h3>Stored Location</h3>
-    <dd>
-        You can find all the save data in
-        <code>userdata/VIDEO</code>
-        .
-    </dd>
+### Save Parameters
+
+#### Storage
+- **Local**: path: `recamera/userdata/VIDEO`
+- **External**: Stored in SD card.
+
+#### Start tickbox
+Once ticked, the saving will start immediately. Saving parameters will be based on the slice and duration below.
+
+#### Slice
+Video time length of each file you want to save. (You can change units in the dropdown menu with version 0.1.6 or above)
+
+#### Duration
+Total time length of the video you want to save. (You can change units in the dropdown menu with version 0.1.6 or above)
+
+**Example**: if slice is set to 5 minutes and duration is set to 1 hour, the video will be saved in 12 files with 5 minutes each.
 </script>
