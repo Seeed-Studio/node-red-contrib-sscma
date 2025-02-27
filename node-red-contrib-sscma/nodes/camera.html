@@ -83,21 +83,27 @@
 <script type="text/markdown" data-help-name="camera">
 This is the `camera node` for Seeed SenseCraft Model Assistant hardwares such as reCamera or Pi camera.
 
-## Input
-Parse in ` msg.enabled = true ` to start camera, and ` msg.enabled = false ` to stop camera.
+### Input
 
-## Output
-### AI Detection
-- Connect it with `model` node to achieve AI detection with different models like yolo v5, yolo v8, yolo 11 and so on.
+Parse in `msg.enabled = true` to start camera, and `msg.enabled = false` to stop camera.
 
-### Preview
-- Connect it with `preview` node to preview what camera is capturing.
+### Output
 
-### Streaming
-- Connect it with `stream` node to activate rstp stream.
+#### AI Detection
 
-### Save
-- Connect it with `save` node to save the desire image or video.
+-   Connect it with `model` node to achieve AI detection with different models like yolo v5, yolo v8, yolo 11 and so on.
+
+#### Preview
+
+-   Connect it with `preview` node to preview what camera is capturing.
+
+#### Streaming
+
+-   Connect it with `stream` node to activate rstp stream.
+
+#### Save
+
+-   Connect it with `save` node to save the desire image or video.
 
 More info: [https://github.com/Seeed-Studio/ModelAssistant](https://github.com/Seeed-Studio/ModelAssistant)
 </script>

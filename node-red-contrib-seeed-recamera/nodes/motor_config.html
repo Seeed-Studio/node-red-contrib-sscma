@@ -95,15 +95,13 @@
     });
 </script>
 <script type="text/markdown" data-help-name="motor-config">
-### Motor Config
-
 Input motor parameters value for reCamera Gimbal, and output control motor CAN data frame according to the protocol.
 
 -   Name: Custom naming.
 -   Input: Access node information.
 -   Output: The CAN bus protocol of the selected motor parameter such as absolute position, .
 
-#### Input:
+### Input:
 
 The input data type can be `number string` or `int` which stands for the motor parameters. 
     
@@ -122,14 +120,17 @@ The input data type can be `number string` or `int` which stands for the motor p
 
 > Note: Due to hardware limitations, please avoid setting the config for Yaw motor at 0 or 360 degrees, Pitch motor at 0 or 180 degrees for a continuous time frame, in case overloading the motors.
 
-#### Output:
+### Output:
 
 The output data is a CAN frame in hexadecimal format. The CAN frame is composed of `ID#Payload Data`.
 -   ID: The ID of the CAN frame is 0x141 for Yaw axis and 0x142 for Pitch axis.
 -   Payload Data: The payload data is composed of 8 bytes, each byte is a hexadecimal value. 
 
 For **absolute position and speed**, A6 command is used:
-Output is `${motorId}#A6.${direction}.${speedHex}.${angleHex}`
+Output is 
+```
+${motorId}#A6.${direction}.${speedHex}.${angleHex}
+```
 
 With A6 command, The host sends this command to control the position (single - turn angle) of the motor. 
 The control value spinDirection sets the rotation direction of the motor. It is of uint8_t type. 0x00 represents clockwise rotation, and 0x01 represents counterclockwise rotation.
@@ -149,7 +150,10 @@ The speed control value maxSpeed limits the maximum rotation speed of the motor.
 
 
 For **relative offset and speed**, A8 command is used:
-Output is `${motorId}#A8.00.${speedHex}.${offsetHex}`
+Output is 
+```
+${motorId}#A8.00.${speedHex}.${offsetHex}
+```
 
 With A8 command, the host sends this command to control the position increment of the motor.
 
@@ -174,10 +178,16 @@ For example:
 -   Yaw axis angle (Left and right): 180
 -   Yaw axis speed(Left and right): 300
 
-output : `141#A4.00.2C.01.10.27.00.00`
+output : 
+```
+141#A4.00.2C.01.10.27.00.00
+```
 
 -   Pitch axis angle (Left and right): 180
 -   Pitch axis speed(Left and right): 300
 
-output : `142#A4.00.2C.01.10.27.00.00`
+output : 
+```
+142#A4.00.2C.01.10.27.00.00
+```
 </script>
