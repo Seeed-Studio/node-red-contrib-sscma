@@ -1,4 +1,4 @@
-const { exec, spawn } = require("child_process");
+const { exec, spawn, ChildProcessWithoutNullStreams } = require("child_process");
 const util = require("util");
 
 const execAsync = util.promisify(exec);
@@ -61,7 +61,11 @@ function sendMotorCommand(canBus, motorId, commandData) {
 
             const commandDataString = commandData.join(".");
             const sendCommand = `${canBus} ${motorId}#${commandDataString}`;
-            const tempProcess = spawn("timeout", [0.1, "candump", canBus], {});
+
+            /**
+             * @type {ChildProcessWithoutNullStreams}
+             */
+            let tempProcess = spawn("timeout", [0.5, "candump", canBus], {});
 
             let responseReceived = false;
 
@@ -71,7 +75,10 @@ function sendMotorCommand(canBus, motorId, commandData) {
                     clearTimeout(timeoutId);
                     timeoutId = null;
                 }
-                tempProcess.kill();
+                if (tempProcess) {
+                    tempProcess.kill();
+                    tempProcess = null;
+                }
                 releaseLock(); // Release lock when done
 
                 if (error) {
@@ -125,6 +132,12 @@ function sendMotorCommand(canBus, motorId, commandData) {
 
             tempProcess.on("error", (error) => {
                 finishProcessing(error);
+            });
+
+            tempProcess.on("close", (error) => {
+                if (!responseReceived) {
+                    finishProcessing(error);
+                }
             });
 
             // Send command

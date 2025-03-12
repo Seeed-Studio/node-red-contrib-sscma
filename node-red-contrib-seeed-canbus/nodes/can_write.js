@@ -50,7 +50,7 @@ module.exports = function (RED) {
                     })
                     .catch((error) => {
                         // 处理错误
-                        node.error(`Error1: ${error.message}`);
+                        node.error(`Error: ${error.message}`);
                         node.status({
                             fill: "red",
                             shape: "ring",
@@ -63,7 +63,7 @@ module.exports = function (RED) {
                     });
             } catch (error) {
                 // 处理输入验证错误
-                node.error(`Error2: ${error.message}`);
+                node.error(`Error: ${error.message}`);
                 node.status({
                     fill: "red",
                     shape: "ring",

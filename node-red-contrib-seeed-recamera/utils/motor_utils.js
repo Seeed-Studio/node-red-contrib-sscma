@@ -1,4 +1,4 @@
-const { exec, spawn } = require("child_process");
+const { exec, spawn, ChildProcessWithoutNullStreams } = require("child_process");
 
 // Motor constants
 const YAW_ID = "141";
@@ -134,7 +134,11 @@ function sendMotorCommand(motorId, commandData) {
 
             // Execute original command sending logic
             const sendCommand = `${CAN_BUS} ${motorId}#${commandData}`;
-            const tempProcess = spawn("timeout", [0.1, "candump", CAN_BUS], {});
+
+            /**
+             * @type {ChildProcessWithoutNullStreams}
+             */
+            let tempProcess = spawn("timeout", [0.5, "candump", CAN_BUS], {});
             let responseReceived = false;
 
             // Set up a function to finish processing, ensuring lock is released in all cases
@@ -143,7 +147,10 @@ function sendMotorCommand(motorId, commandData) {
                     clearTimeout(timeoutId);
                     timeoutId = null;
                 }
-                tempProcess.kill();
+                if (tempProcess) {
+                    tempProcess.kill();
+                    tempProcess = null;
+                }
                 releaseLock();
 
                 if (error) {
@@ -185,6 +192,12 @@ function sendMotorCommand(motorId, commandData) {
 
             tempProcess.on("error", (error) => {
                 finishProcessing(error);
+            });
+
+            tempProcess.on("close", (error) => {
+                if (!responseReceived) {
+                    finishProcessing(error);
+                }
             });
 
             // Send command

@@ -90,8 +90,7 @@ module.exports = function (RED) {
                 const speedHex = globalContext.get(isYawMotor ? CURRENT_YAW_SPEED_KEY : CURRENT_PITCH_SPEED_KEY) ?? DEFAULT_SPEED;
 
                 // Read current motor position
-                await readCurrentAngle(motorId);
-                const currentAngelValue = 90;
+                const currentAngelValue = await readCurrentAngle(motorId);
                 let commandData;
                 let finalPosition; // Store final position (absolute angle)
 
