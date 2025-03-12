@@ -1,0 +1,154 @@
+<script type="text/html" data-template-name="get-motor-angle">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label style="width: 100%;">
+            <i class="fa fa-compass"></i>
+            Motor
+        </label>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="0" />
+            <span>Yaw Axis (Left and Right)</span>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="1" />
+            <span>Pitch Axis (Up and Down)</span>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <label style="width: 100%;">
+            <i class="fa fa-cog"></i>
+            Output Format
+        </label>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="checkbox" id="node-input-outputInDegrees" />
+            <span>Output in Degrees</span>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("get-motor-angle", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" },
+            output: { required: true, value: "0" },
+            outputInDegrees: { value: false },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-compass",
+        paletteLabel: "get motor angle",
+        label: function () {
+            return this.name || "get motor angle";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $(`input[name="node-input-output"][value="${node.output}"]`).prop("checked", true);
+            $("#node-input-outputInDegrees").prop("checked", node.outputInDegrees);
+        },
+        oneditsave: function () {
+            this.output = $('input[name="node-input-output"]:checked').val();
+            this.outputInDegrees = $("#node-input-outputInDegrees").is(":checked");
+        },
+    });
+</script>
+
+<script type="text/markdown" data-help-name="get-motor-angle">
+# Get Motor Angle
+
+This node retrieves the current angle position of a selected motor from the reCamera Gimbal system.
+
+## Overview
+
+The node queries the current position of either the yaw (horizontal) or pitch (vertical) motor and outputs the angle. This is useful for monitoring the current orientation of the camera or for implementing position-based logic in your flows.
+
+## Input
+
+Any input message will trigger the node to read the current motor angle. The content of the input message is not used.
+
+## Motor Selection
+
+-   **Yaw Axis (Left and Right)**: Retrieves the angle of the horizontal movement motor
+-   **Pitch Axis (Up and Down)**: Retrieves the angle of the vertical movement motor
+
+## Output Format
+
+-   **Raw Value (default)**: Outputs the raw angle value from the motor (in motor units)
+-   **Output in Degrees**: When checked, divides the raw value by 100 to convert to degrees
+
+## Output
+
+The node outputs the current angle value in the `msg.payload` property:
+
+```json
+// With "Convert to Degrees" unchecked (raw value)
+{
+    "payload": 9050
+}
+
+// With "Convert to Degrees" checked
+{
+    "payload": 90.5
+}
+```
+
+## Angle Units
+
+-   **Raw Value**: Motor units (hundredths of degrees, 0-36000 for yaw, 0-18000 for pitch)
+-   **Converted Value**: Degrees (0° to 360° for yaw, 0° to 180° for pitch)
+
+## Status Display
+
+The node displays the current angle in its status:
+
+-   Blue dot with "Reading" while querying the motor
+-   Green dot with "Yaw: X°" or "Pitch: X°" when successfully retrieved
+-   Yellow ring with "Busy" if another query is already in progress
+-   Red ring with error message if retrieval fails
+
+## Process
+
+1. When triggered by an input message, the node sends a status query to the selected motor
+2. The motor responds with its current position data
+3. The node parses this data and optionally converts it from motor units to degrees
+4. The angle value is sent to the output and displayed in the node status
+
+## Error Handling
+
+The node will report errors in the following cases:
+
+-   Communication error with the motor
+-   Invalid response from the motor
+-   Concurrent requests (will show "Busy" status)
+
+## Use Cases
+
+-   Monitoring the current camera orientation
+-   Creating position-based triggers or conditions
+-   Implementing closed-loop control systems
+-   Logging or displaying position values
+-   Verifying that movement commands have completed successfully
+
+## Technical Notes
+
+-   Motor units are in hundredths of degrees (0.01 degree/LSB)
+-   The raw value is useful for high-precision applications
+-   The converted value is more human-readable
+</script>

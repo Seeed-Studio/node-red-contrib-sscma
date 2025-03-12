@@ -1,0 +1,208 @@
+<script type="text/html" data-template-name="set-motor-angle">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-arrow-circle-right"></i>
+            Input
+        </label>
+        <input type="text" id="node-input-input" />
+        <input type="hidden" id="node-input-input-type" />
+    </div>
+    
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="checkbox" id="node-input-inputInDegrees" />
+            <span>Input in Degrees</span>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <label style="width: 100%;">
+            <i class="fa fa-arrow-circle-left"></i>
+            Output as motor parameters
+        </label>
+    </div>
+    <div class="form-row" style="margin-left: 20px; margin-bottom: 0;">
+        <label style="width: 100%;"><b>Yaw Axis (Left and Right):</b></label>
+    </div>
+    <div class="form-row" style="margin-bottom: 20px;">
+        <div style="margin-left: 10px;">
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="0" />
+                <span>Absolute Position (deg)</span>
+            </div>
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="1" />
+                <span>Relative Offset (deg)</span>
+            </div>
+        </div>
+    </div>
+    <div class="form-row" style="margin-left: 20px; margin-bottom: 0;">
+        <label style="width: 100%;"><b>Pitch Axis (Up and Down):</b></label>
+    </div>
+    <div class="form-row">
+        <div style="margin-left: 10px;">
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="2" />
+                <span>Absolute Position (deg)</span>
+            </div>
+            <div style="display: flex; align-items: center; margin: 5px 0;">
+                <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="3" />
+                <span>Relative Offset (deg)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="checkbox" id="node-input-outputInDegrees" />
+            <span>Output in Degrees</span>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("set-motor-angle", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" },
+            input: { value: "payload", required: true },
+            "input-type": { value: "msg" },
+            output: { required: true, value: "0" },
+            inputInDegrees: { value: false },
+            outputInDegrees: { value: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-compass",
+        paletteLabel: "set motor angle",
+        label: function () {
+            return this.name || "set motor angle";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $("#node-input-input").typedInput({
+                type: "msg",
+                types: ["msg", "flow", "global"],
+                typeField: "#node-input-input-type",
+            });
+            $(`input[name="node-input-output"][value="${node.output}"]`).prop("checked", true);
+            $("#node-input-inputInDegrees").prop("checked", node.inputInDegrees);
+            $("#node-input-outputInDegrees").prop("checked", node.outputInDegrees);
+        },
+        oneditsave: function () {
+            this.output = $('input[name="node-input-output"]:checked').val();
+            this.input = $("#node-input-input").typedInput("value");
+            this.inputInDegrees = $("#node-input-inputInDegrees").is(":checked");
+            this.outputInDegrees = $("#node-input-outputInDegrees").is(":checked");
+        },
+    });
+</script>
+
+<script type="text/markdown" data-help-name="set-motor-angle">
+# Set Motor Angle
+
+This node configures and sends motor angle commands to the reCamera Gimbal motors.
+
+## Configuration
+
+- **Name**: Custom naming for the node.
+- **Input**: Source of the angle value (msg, flow, or global).
+- **Input in Degrees**: When checked, input values are treated as degrees (e.g., 180.5°). When unchecked, input values are treated as raw motor units (e.g., 18050).
+- **Output in Degrees**: When checked, the angle value in the output message will be in degrees with 2 decimal places. When unchecked, the value will be in raw motor units.
+- **Motor Selection**: Choose which motor to control and the control mode:
+  - **Yaw Axis** (Left and Right): Horizontal movement
+    - **Absolute Position**: Set the motor to a specific angle
+    - **Relative Offset**: Move the motor by a relative amount
+  - **Pitch Axis** (Up and Down): Vertical movement
+    - **Absolute Position**: Set the motor to a specific angle
+    - **Relative Offset**: Move the motor by a relative amount
+
+## Input
+
+The input can be a number or a string that can be converted to a number:
+
+- **When "Input in Degrees" is checked**:
+  - For Absolute Position:
+    - Yaw axis: 0 to 360 degrees
+    - Pitch axis: 0 to 180 degrees
+  - For Relative Offset:
+    - Yaw axis: -360 to 360 degrees
+    - Pitch axis: -180 to 180 degrees
+
+- **When "Input in Degrees" is not checked**:
+  - For Absolute Position:
+    - Yaw axis: 0 to 36000 units
+    - Pitch axis: 0 to 18000 units
+  - For Relative Offset:
+    - Yaw axis: -36000 to 36000 units
+    - Pitch axis: -18000 to 18000 units
+
+## Output
+
+The node outputs a message with the following properties:
+
+- **payload**: The CAN frame command string in the format `motorId#commandType.direction.speed.angleHex`
+- **angle**: The angle value in either degrees (with 2 decimal places) or raw motor units, depending on the "Output in Degrees" setting
+- **motorId**: The ID of the motor being controlled (141 for Yaw, 142 for Pitch)
+- **isAbsolute**: Boolean indicating whether the command is absolute (true) or relative (false)
+
+### CAN Frame Format
+
+The output CAN frame follows this format:
+
+For **absolute position** (A6 command):
+```
+${motorId}#A6.00.${speedHex}.${angleHex}
+```
+
+For **relative offset** (A8 command):
+```
+${motorId}#A8.00.${speedHex}.${offsetHex}
+```
+
+## Examples
+
+### Example 1: Setting Yaw to 90 degrees (absolute)
+- Configuration: Yaw Axis Absolute Position, Input in Degrees checked
+- Input: `90`
+- Output: 
+  ```
+  {
+    "payload": "141#A6.00.2C.01.70.17.00.00",
+    "angle": 90,
+    "motorId": "141",
+    "isAbsolute": true
+  }
+  ```
+
+### Example 2: Moving Pitch up by 5 degrees (relative)
+- Configuration: Pitch Axis Relative Offset, Input in Degrees checked
+- Input: `5`
+- Output:
+  ```
+  {
+    "payload": "142#A8.00.2C.01.F4.01.00.00",
+    "angle": 5,
+    "motorId": "142",
+    "isAbsolute": false
+  }
+  ```
+
+## Technical Notes
+
+- Motor units are in hundredths of degrees (0.01 degree/LSB)
+- When "Input in Degrees" is checked, the input value is multiplied by 100 internally
+- When "Output in Degrees" is checked, the output value is divided by 100 and formatted with 2 decimal places
+- The motor speed is taken from global context or uses a default value
+- Angle values are automatically limited to the safe operating range
+
+> **Hardware Note**: Due to hardware limitations, please avoid setting the Yaw motor at 0° or 360°, and the Pitch motor at 0° or 180° for extended periods to prevent motor overload.
+</script>

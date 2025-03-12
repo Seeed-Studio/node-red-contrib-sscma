@@ -29,8 +29,8 @@
             },
         },
         inputs: 1,
-        outputs: 0,
-        icon: "font-awesome/fa-crosshairs",
+        outputs: 1,
+        icon: "font-awesome/fa-random",
         paletteLabel: "CAN write",
         label: function () {
             return this.name || "CAN write";
@@ -39,22 +39,77 @@
         oneditsave: function () {},
     });
 </script>
+
 <script type="text/markdown" data-help-name="can-write">
-Write data frame to CANBus.
+# CAN Write
 
-- Name: Custom naming.
-- CAN Bus: Configure and select CAN interface and baud rate
+This node sends CAN bus frames and receives the corresponding response frames.
 
-### Input
+## Overview
+The CAN Write node allows you to send command frames to CAN bus devices and receive their response frames. It's particularly useful for querying device status, sending control commands, and monitoring responses from CAN bus devices.
 
-CAN standard frame format: 
+## Configuration
+- **Name**: Optional name for the node
+- **Client**: Select the CAN bus configuration to use (must be configured in a CAN-config node)
+
+## Input
+The input should be a string representing a CAN frame in standard format:
 
 ```
 ID#data[0].data[1].data[2].data[3].data[4].data[5].data[6].data[7]
 ```
 
-For example: 
+Where:
+- **ID**: The CAN identifier (in hexadecimal without 0x prefix)
+- **data[0-7]**: Data bytes in hexadecimal (without 0x prefix)
+
+### Example Input
 ```
 141#A4.00.2C.01.50.46.00.00
 ```
+
+This represents:
+- CAN ID: 141 (hex)
+- Data bytes: A4, 00, 2C, 01, 50, 46, 00, 00
+
+## Output
+The node outputs the response frame received from the CAN bus device. The response typically contains:
+
+1. The same CAN ID as the request
+2. The same first data byte (data[0]) as the request
+3. Additional data bytes containing the response information
+
+### Example
+Request frame (Input):
+```
+141#90.00.00.00.00.00.00.00
+```
+
+Response frame (Output):
+```
+141#90.00.AB.02.3C.4C.91.49
+```
+
+## Response Filtering
+The node automatically filters response frames by matching:
+- The CAN ID of the request
+- The first data byte (data[0]) of the request
+
+This ensures you receive only the relevant response to your specific command.
+
+## Timeout
+If no response is received within the configured timeout period, the node will output an error message.
+
+## Error Handling
+The node will report errors in the following cases:
+- Invalid input format
+- CAN bus communication error
+- Response timeout
+
+## Notes
+- All hexadecimal values should be provided without the "0x" prefix
+- Data bytes should be separated by periods
+- The CAN ID and data are separated by the "#" character
+- Not all CAN frames will generate a response; some are one-way commands
+- For continuous monitoring of CAN bus traffic, use the "CAN in" node instead
 </script>

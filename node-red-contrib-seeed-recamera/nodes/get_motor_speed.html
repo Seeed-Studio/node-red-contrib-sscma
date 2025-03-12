@@ -1,0 +1,104 @@
+<script type="text/html" data-template-name="get-motor-speed">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label style="width: 100%;">
+            <i class="fa fa-cog"></i>
+            Motor
+        </label>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="0" />
+            <span>Yaw Axis (Left and Right)</span>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="1" />
+            <span>Pitch Axis (Up and Down)</span>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("get-motor-speed", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" },
+            output: { required: true, value: "0" },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-tachometer",
+        paletteLabel: "get motor speed",
+        label: function () {
+            return this.name || "get motor speed";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $(`input[name="node-input-output"][value="${node.output}"]`).prop("checked", true);
+        },
+        oneditsave: function () {
+            this.output = $('input[name="node-input-output"]:checked').val();
+        },
+    });
+</script>
+
+<script type="text/markdown" data-help-name="get-motor-speed">
+# Get Motor Speed
+
+This node retrieves the current rotation speed setting of a selected motor from the reCamera Gimbal system.
+
+## Overview
+The node reads the current speed value stored in the global context for either the yaw (horizontal) or pitch (vertical) motor. This speed value is used by other motor control nodes when sending movement commands.
+
+## Input
+Any input message will trigger the node to read the current motor speed from global context. The content of the input message is not used.
+
+## Motor Selection
+- **Yaw Axis (Left and Right)**: Retrieves the speed setting for the horizontal movement motor
+- **Pitch Axis (Up and Down)**: Retrieves the speed setting for the vertical movement motor
+
+## Output
+The node outputs the current speed value in the `msg.payload` property:
+
+```json
+{
+  "payload": 90
+}
+```
+
+## Speed Units
+The speed value is measured in dps/LSB (degrees per second / Least Significant Bit), which is the resolution of the motor's speed control. The valid range is 0 to 65535, with typical values between 50 and 200.
+
+## Status Display
+The node displays the current speed value in its status:
+- Green dot with "Speed: X" when successfully retrieved
+- Red ring with error message if retrieval fails
+
+## Global Context Variables
+The node reads from the following global context variables:
+- Yaw motor: `can$$currentYawSpeed`
+- Pitch motor: `can$$currentPitchSpeed`
+
+## Notes
+- The speed value is stored in hexadecimal format in the global context but is converted to a decimal number for the output
+- If no speed has been set, the node will output 0
+- This node only reads the speed setting; it does not change it
+- To change the speed, use the "set motor speed" node
+
+## Use Cases
+- Monitoring the current speed settings
+- Conditional logic based on current speed
+- Logging or displaying speed values
+- Creating speed profiles by reading current values before changing them
+</script>

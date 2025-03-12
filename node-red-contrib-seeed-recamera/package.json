@@ -1,7 +1,13 @@
 {
     "name": "node-red-contrib-seeed-recamera",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "Node-RED nodes for reCamera",
+    "keywords": [
+        "node-red",
+        "recamera"
+    ],
+    "homepage": "https://github.com/Seeed-Studio/node-red-contrib-nodes",
+    "license": "Apache-2.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/Seeed-Studio/node-red-contrib-nodes.git",
@@ -11,18 +17,19 @@
         "version": ">=2.0.0",
         "nodes": {
             "light": "nodes/light.js",
-            "motor-config": "nodes/motor_config.js"
+            "set-motor-angle": "nodes/set_motor_angle.js",
+            "set-motor-speed": "nodes/set_motor_speed.js",
+            "get-motor-angle": "nodes/get_motor_angle.js",
+            "get-motor-speed": "nodes/get_motor_speed.js",
+            "encode-motor-angle": "nodes/encode_motor_angle.js",
+            "decode-motor-angle": "nodes/decode_motor_angle.js"
         }
     },
-    "license": "Apache-2.0",
-    "keywords": [
-        "node-red",
-        "recamera"
-    ],
-    "engines": {
-        "node": ">=12"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@types/node-red": "^1.3.5"
+    },
+    "engines": {
+        "node": ">=12"
     }
 }

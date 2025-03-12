@@ -33,23 +33,6 @@ sudo apt-get install can-utils
 ## Usage
 
 
-
-### CAN write
-
-Write data frame to CANBus.
-
-- Name: Custom naming.
-- CAN Bus: Configure and select CAN interface and baud rate
-
-#### Input
-
-CAN standard frame format: 
-
-`ID#data[0].data[1].data[2].data[3].data[4].data[5].data[6].data[7]`
-
-For example: `141#A4.00.2C.01.50.46.00.00`
-
-
 ### CAN read
 
 Send out all the input data from CANBus.
@@ -74,8 +57,6 @@ The output format is json package:
 }
 ```
 
-
-
 For example:
 
 ```json
@@ -94,19 +75,19 @@ For example:
 ```
 
 
-### CAN response
+### CAN write
 
-Read the response of the specified CAN request frame in CAN response node.
+Read the response of the specified CAN request frame in CAN write node.
 
-#### Input
+### Input
 
-CAN standard frame format: 
+CAN standard frame format:
 
 `ID#data[0].data[1].data[2].data[3].data[4].data[5].data[6].data[7]`
 
 For example: `141#A4.00.2C.01.50.46.00.00`
 
-#### Output
+### Output
 
 The data returned by the reply frame is the content of the query frame.
 

@@ -1,0 +1,154 @@
+<script type="text/html" data-template-name="set-motor-speed">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-arrow-circle-right"></i>
+            Input
+        </label>
+        <input type="text" id="node-input-input" />
+        <input type="hidden" id="node-input-input-type" />
+    </div>
+    <div class="form-row">
+        <label style="width: 100%;">
+            <i class="fa fa-cog"></i>
+            Motor
+        </label>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="0" />
+            <span>Yaw Axis (Left and Right)</span>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="radio" name="node-input-output" value="1" />
+            <span>Pitch Axis (Up and Down)</span>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("set-motor-speed", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" },
+            input: { value: "payload", required: true },
+            "input-type": { value: "msg" },
+            output: { required: true, value: "0" },
+        },
+        inputs: 1,
+        outputs: 0,
+        icon: "font-awesome/fa-tachometer",
+        paletteLabel: "set motor speed",
+        label: function () {
+            return this.name || "set motor speed";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $("#node-input-input").typedInput({
+                type: "msg",
+                types: ["msg", "flow", "global"],
+                typeField: "#node-input-input-type",
+            });
+            $(`input[name="node-input-output"][value="${node.output}"]`).prop("checked", true);
+        },
+        oneditsave: function () {
+            this.output = $('input[name="node-input-output"]:checked').val();
+            this.input = $("#node-input-input").typedInput("value");
+        },
+    });
+</script>
+
+<script type="text/markdown" data-help-name="set-motor-speed">
+# Set Motor Speed
+
+This node configures the rotation speed for a selected motor in the reCamera Gimbal system.
+
+## Overview
+
+The node sets the speed value for either the yaw (horizontal) or pitch (vertical) motor. This speed setting is stored in the global context and used by other motor control nodes when sending movement commands.
+
+## Input
+
+The input should be a numeric value representing the desired motor speed. The value can be provided in the following formats:
+
+-   Number: `90`
+-   String containing a number: `"45"`
+
+## Input Configuration
+
+You can specify where to get the input value from:
+
+-   **msg**: A property of the incoming message (e.g., `payload`)
+-   **flow**: A flow context variable
+-   **global**: A global context variable
+
+## Motor Selection
+
+-   **Yaw Axis (Left and Right)**: Sets the speed for the horizontal movement motor
+-   **Pitch Axis (Up and Down)**: Sets the speed for the vertical movement motor
+
+## Speed Units
+
+The speed value is measured in dps/LSB (degrees per second / Least Significant Bit), which is the resolution of the motor's speed control. The valid range is 0 to 65535, with typical values between 50 and 200.
+
+Speed reference values:
+
+-   **Slow movement**: 50-70
+-   **Medium movement**: 80-120
+-   **Fast movement**: 130-200
+
+## Status Display
+
+The node displays the current speed setting in its status:
+
+-   Green dot with "Yaw Speed: X" or "Pitch Speed: X" when successfully set
+-   Red ring with error message if setting fails
+
+## Global Context Variables
+
+The node updates the following global context variables:
+
+-   Yaw motor: `can$$currentYawSpeed`
+-   Pitch motor: `can$$currentPitchSpeed`
+
+## Notes
+
+-   The speed value is stored in hexadecimal format in the global context
+-   This node does not have any outputs as it only updates the global context
+-   The speed setting persists until changed by another "set motor speed" node
+-   Setting a higher speed results in faster but potentially less precise movements
+-   Setting a lower speed results in slower but more precise movements
+
+## Error Handling
+
+The node will report errors in the following cases:
+
+-   Invalid input value (not a number)
+-   Empty input value
+
+## Example Usage
+
+1. Set a slow speed for precise positioning:
+
+    ```
+    msg.payload = 60;
+    return msg;
+    ```
+
+2. Set a fast speed for quick movements:
+    ```
+    msg.payload = 150;
+    return msg;
+    ```
+</script>

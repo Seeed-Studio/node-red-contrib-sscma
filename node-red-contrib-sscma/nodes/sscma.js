@@ -1,17 +1,18 @@
+const { MsgType } = require("./constants");
+const mqtt = require("mqtt");
+
 module.exports = function (RED) {
     "use strict";
-    const { MsgType } = require("./constants");
-    const mqtt = require("mqtt");
 
-    function updateStatus(node, allNodes) {
-        let setStatus = setStatusDisconnected;
-        if (node.connecting) {
-            setStatus = setStatusConnecting;
-        } else if (node.connected) {
-            setStatus = setStatusConnected;
-        }
-        setStatus(node, allNodes);
-    }
+    // function updateStatus(node, allNodes) {
+    //     let setStatus = setStatusDisconnected;
+    //     if (node.connecting) {
+    //         setStatus = setStatusConnecting;
+    //     } else if (node.connected) {
+    //         setStatus = setStatusConnected;
+    //     }
+    //     setStatus(node, allNodes);
+    // }
 
     function setStatusDisconnected(node, allNodes) {
         if (allNodes) {
@@ -33,19 +34,18 @@ module.exports = function (RED) {
         }
     }
 
-    function setStatusConnected(node, allNodes) {
-        if (allNodes) {
-            for (const id in node.users) {
-                node.users[id].status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
-            }
-        } else {
-            node.status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
-        }
-    }
+    // function setStatusConnected(node, allNodes) {
+    //     if (allNodes) {
+    //         for (const id in node.users) {
+    //             node.users[id].status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
+    //         }
+    //     } else {
+    //         node.status({ fill: "green", shape: "dot", text: "node-red:common.status.connected" });
+    //     }
+    // }
 
     function SSCMANode(config) {
         RED.nodes.createNode(this, config);
-
         const node = this;
         node.users = {};
         // Config node state

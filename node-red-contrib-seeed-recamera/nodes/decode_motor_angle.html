@@ -1,0 +1,130 @@
+<script type="text/html" data-template-name="decode-motor-angle">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    
+    <div class="form-row">
+        <div style="display: flex; align-items: center; margin: 5px 0;">
+            <input style="width: auto; margin: 0 10px;" type="checkbox" id="node-input-outInDegrees" />
+            <span>Output in Degrees</span>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("decode-motor-angle", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" },
+            outInDegrees: { value: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-exchange",
+        paletteLabel: "decode motor angle",
+        label: function () {
+            return this.name || "decode motor angle";
+        },
+        oneditprepare: function () {
+            const node = this;
+            $("#node-input-outInDegrees").prop("checked", node.outInDegrees);
+        },
+        oneditsave: function () {
+            this.outInDegrees = $("#node-input-outInDegrees").is(":checked");
+        },
+    });
+</script>
+
+<script type="text/markdown" data-help-name="decode-motor-angle">
+# Decode Motor Angle
+
+This node decodes CAN bus motor control commands into human-readable angle values for reCamera Gimbal motors.
+
+## Overview
+The node takes a CAN frame command string as input and extracts the motor ID, command type, and angle/offset value. It supports both absolute position commands (A6) and relative offset commands (A8).
+
+## Input
+The input should be a CAN frame command string in the format:
+```
+motorId#commandType.direction.speed.angleHex
+```
+
+Examples:
+- `141#A6.00.2C.01.10.27.00.00` (Yaw motor absolute position)
+- `142#A8.00.2C.01.F4.01.00.00` (Pitch motor relative offset)
+
+## Output Format
+- **Raw Value (default)**: Outputs the raw angle value from the motor (in motor units)
+- **Output in Degrees**: When checked, divides the raw value by 100 to convert to degrees
+
+## Output
+The node outputs a JSON object with the decoded information:
+
+For absolute position commands (A6) with "Output in Degrees" checked:
+```json
+{
+    "payload": {
+        "motorId": "141",
+        "angle": 90.5
+    }
+}
+```
+
+For absolute position commands (A6) with raw values:
+```json
+{
+    "payload": {
+        "motorId": "141",
+        "angle": 9050
+    }
+}
+```
+
+For relative offset commands (A8) with "Output in Degrees" checked:
+```json
+{
+    "payload": {
+        "motorId": "142",
+        "offset": 5.0
+    }
+}
+```
+
+For relative offset commands (A8) with raw values:
+```json
+{
+    "payload": {
+        "motorId": "142",
+        "offset": 500
+    }
+}
+```
+
+## Motor IDs
+- Yaw motor (horizontal): `141`
+- Pitch motor (vertical): `142`
+
+## Command Types
+- `A6`: Absolute position command
+- `A8`: Relative offset command
+
+## Angle Units
+- **Raw Value**: Motor units (hundredths of degrees)
+- **Converted Value**: Degrees
+
+## Notes
+- The node handles the byte order conversion (little-endian format)
+- Error messages are displayed if the input format is invalid
+- When "Output in Degrees" is checked, the values are more human-readable
+- When "Output in Degrees" is not checked, the values match the motor's internal units
+
+## Technical Notes
+- Motor units are in hundredths of degrees (0.01 degree/LSB)
+- The raw value is useful for high-precision applications
+- The converted value is more human-readable
+</script>

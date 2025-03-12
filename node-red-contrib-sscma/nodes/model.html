@@ -68,6 +68,7 @@
         font-size: 14px;
         cursor: pointer;
         transition: background-color 0.3s;
+        width: auto !important;
     }
 
     .upload-button:hover {
@@ -214,10 +215,10 @@
     <div class="form-row">
       <label><i class="fa fa-cog"></i> Choose Model From </label>
       <div class="node-input-model-container">
-        <button id="btn-preset" class="preset-button preset-button-cube"><i class="fa fa-cube"></i> On Device </button>
+        <button id="btn-preset" class="preset-button preset-button-cube"><i class="fa fa-cube"></i> Device </button>
       </div>
       <div class="node-input-model-container">
-        <button id="btn-online" class="preset-button preset-button-cloud"><i class="fa fa-cloud"></i> SenseCraft Zoo </button>
+        <button id="btn-online" class="preset-button preset-button-cloud"><i class="fa fa-cloud"></i> SenseCraft </button>
       </div>
       <div class="node-input-model-container">
         <label for="upload-file" class="upload-button">
@@ -246,15 +247,15 @@
     </div>
     <div class="form-row">
         <label for="node-input-debug"><i class="fa fa-picture-o"></i> Base64 image output</label>
-        <input type="checkbox" id="node-input-debug">
+        <input type="checkbox" id="node-input-debug" style="width:auto;">
     </div>
     <div class="form-row">
         <label for="node-input-trace"><i class="fa fa-toggle-on"></i> Trace</label>
-        <input type="checkbox" id="node-input-trace">
+        <input type="checkbox" id="node-input-trace" style="width:auto;">
     </div>
     <div class="form-row">
         <label for="node-input-counting"><i class="fa fa-ellipsis-h"></i> Counting</label>
-        <input type="checkbox" id="node-input-counting">
+        <input type="checkbox" id="node-input-counting" style="width:auto;">
     </div>
     <div class="form-row" id="splitter-row">
         <label for="node-input-line"><i class="fa fa-arrows-alt"></i> Line</label>
