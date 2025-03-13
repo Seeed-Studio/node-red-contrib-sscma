@@ -47,4 +47,4 @@ This flow processes data using an AI model and sends the results to a connected 
 
 ## License
 
-This project is licensed under the Apache License 2.0. 
+This project is licensed under the Apache License 2.0.
