@@ -22,7 +22,8 @@
             "get-motor-angle": "nodes/get_motor_angle.js",
             "get-motor-speed": "nodes/get_motor_speed.js",
             "encode-motor-angle": "nodes/encode_motor_angle.js",
-            "decode-motor-angle": "nodes/decode_motor_angle.js"
+            "decode-motor-angle": "nodes/decode_motor_angle.js",
+            "track": "nodes/track.js"
         }
     },
     "dependencies": {},

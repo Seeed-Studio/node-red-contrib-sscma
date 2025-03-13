@@ -1,0 +1,157 @@
+<script type="text/html" data-template-name="track">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" />
+    </div>
+    
+    <div class="form-row">
+        <label style="width:100%;">
+            <i class="fa fa-info-circle"></i>
+            Input Format
+        </label>
+        <div style="margin-left:20px; margin-right:10px; margin-bottom:10px;">
+            <p>This node accepts JSON input with the following format:</p>
+            <pre style="font-size:12px; background:#f8f8f8; padding:10px; border-radius:3px; border:1px solid #ddd;">
+{
+  "yaw_offset": offset_value,  // Horizontal angle in degrees
+  "yaw_speed": speed_value,    // Optional: 0-65535
+  "pitch_offset": offset_value, // Vertical angle in degrees
+  "pitch_speed": speed_value    // Optional: 0-65535
+}</pre
+            >
+            <p>
+                <strong>Example:</strong>
+                <code style="display:block; white-space:pre-wrap;">
+{
+  "yaw_offset": -1.57,
+  "yaw_speed": 70,
+  "pitch_offset": -1.06,
+  "pitch_speed": 60
+}
+                </code>
+            </p>
+        </div>
+    </div>
+</script>
+
+<script type="text/javascript">
+    RED.nodes.registerType("track", {
+        category: "reCamera",
+        color: "#C6D09C",
+        defaults: {
+            name: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "font-awesome/fa-crosshairs",
+        paletteLabel: "track",
+        label: function () {
+            return this.name || "track";
+        }
+    });
+</script>
+
+<script type="text/markdown" data-help-name="track">
+# Track
+
+This node controls the reCamera Gimbal motors for tracking objects based on offset values.
+
+## Overview
+
+The Track node accepts offset values for both yaw (horizontal) and pitch (vertical) motors and executes relative movement commands to track objects. It also allows setting the speed for each motor.
+
+## Input Format
+
+Please pass in the following JSON format to control the tracking:
+
+```json
+{
+  "yaw_offset": offset_value,
+  "yaw_speed": speed_value,
+  "pitch_offset": offset_value,
+  "pitch_speed": speed_value
+}
+```
+
+Where:
+- **yaw_offset**: Horizontal angle offset in degrees (negative for left, positive for right)
+- **yaw_speed**: (Optional) Speed for the yaw motor movement (0-65535)
+- **pitch_offset**: Vertical angle offset in degrees (negative for down, positive for up)
+- **pitch_speed**: (Optional) Speed for the pitch motor movement (0-65535)
+
+**Note**: Speed values are optional. If not provided, the last set speed or default value will be used.
+
+## Example Inputs
+
+1. Basic tracking with default speeds:
+   ```json
+   {
+     "yaw_offset": -1.5,
+     "pitch_offset": 0.8
+   }
+   ```
+
+2. Tracking with custom speeds:
+   ```json
+   {
+     "yaw_offset": 3.2,
+     "yaw_speed": 70,
+     "pitch_offset": -1.0,
+     "pitch_speed": 60
+   }
+   ```
+
+3. Horizontal tracking only:
+   ```json
+   {
+     "yaw_offset": 2.0,
+     "yaw_speed": 80,
+     "pitch_offset": 0
+   }
+   ```
+
+## Processing
+
+The node performs the following operations:
+
+1. Updates motor speeds in global context if provided
+2. Reads current motor positions
+3. Calculates final positions based on offsets
+4. Checks if final positions are within safe limits
+5. Executes yaw movement command first (if offset is not zero)
+6. Executes pitch movement command second (if offset is not zero)
+7. Returns the results of the commands
+
+## Output
+
+The node outputs a message with the results of the tracking commands:
+
+```json
+{
+  "payload": [
+    {
+      "motor": "yaw",
+      "command": "141#A8.00.3C.00.6C.09.00.00",
+      "currentPosition": 45.67,
+      "requestedOffset": -2.5,
+      "actualOffset": -2.5,
+      "finalPosition": 43.17,
+    },
+    {
+      "motor": "pitch",
+      "command": "142#A8.00.32.00.B0.04.00.00",
+      "currentPosition": 90.12,
+      "requestedOffset": 1.2,
+      "actualOffset": 1.2,
+      "finalPosition": 91.32,
+    }
+  ]
+}
+```
+
+## Status Display
+
+The node displays the current tracking information in its status:

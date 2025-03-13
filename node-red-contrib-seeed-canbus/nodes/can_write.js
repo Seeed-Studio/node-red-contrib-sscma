@@ -6,19 +6,19 @@ module.exports = function (RED) {
         const client = RED.nodes.getNode(config.client);
         const node = this;
 
-        // 标记是否正在等待响应
+        // Flag to track if we're waiting for a response
         let waitingForResponse = false;
 
-        // 处理输入消息
+        // Handle input messages
         node.on("input", function (msg) {
-            // 如果正在等待响应，通知上游节点
+            // If already waiting for a response, notify upstream nodes
             if (waitingForResponse) {
                 node.status({ fill: "yellow", shape: "ring", text: "Busy" });
                 return;
             }
 
             try {
-                // 获取 CAN 接口
+                // Get CAN interface
                 const canInterface = client.can.interface;
                 if (!canInterface) {
                     throw new Error("CAN interface not configured");
@@ -26,22 +26,22 @@ module.exports = function (RED) {
 
                 const data = msg.payload;
 
-                // 验证输入数据格式
+                // Validate input data format
                 const { id, items } = checkCanPayloadInput(data);
 
-                // 设置状态为"处理中"
+                // Set status to "Processing"
                 waitingForResponse = true;
                 node.status({ fill: "blue", shape: "dot", text: "Processing" });
 
-                // 使用 sendMotorCommand 发送命令并等待响应
+                // Use sendMotorCommand to send command and wait for response
                 sendMotorCommand(canInterface, id, items)
                     .then((responseData) => {
-                        // 发送成功响应给下游节点
+                        // Send successful response to downstream nodes
                         node.send({
                             payload: responseData,
                         });
 
-                        // 更新节点状态
+                        // Update node status
                         node.status({
                             fill: "green",
                             shape: "dot",
@@ -49,7 +49,7 @@ module.exports = function (RED) {
                         });
                     })
                     .catch((error) => {
-                        // 处理错误
+                        // Handle errors
                         node.error(`Error: ${error.message}`);
                         node.status({
                             fill: "red",
@@ -58,11 +58,11 @@ module.exports = function (RED) {
                         });
                     })
                     .finally(() => {
-                        // 无论成功或失败，重置等待状态
+                        // Reset waiting state regardless of success or failure
                         waitingForResponse = false;
                     });
             } catch (error) {
-                // 处理输入验证错误
+                // Handle input validation errors
                 node.error(`Error: ${error.message}`);
                 node.status({
                     fill: "red",

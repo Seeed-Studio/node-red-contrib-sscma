@@ -123,6 +123,12 @@ const releaseLock = () => {
  * @param {string} commandData - Command data
  * @returns {Promise<Array>} Response data
  */
+/**
+ * Send a motor command and wait for response
+ * @param {string} motorId - Motor ID
+ * @param {string} commandData - Command data as string (already formatted)
+ * @returns {Promise<Array>} Response data items
+ */
 function sendMotorCommand(motorId, commandData) {
     // Return a Promise that wraps lock acquisition and release
     return new Promise(async (resolve, reject) => {
@@ -139,7 +145,11 @@ function sendMotorCommand(motorId, commandData) {
              * @type {ChildProcessWithoutNullStreams}
              */
             let tempProcess = spawn("timeout", [0.5, "candump", CAN_BUS], {});
+            
             let responseReceived = false;
+            let messageCount = 0;
+            let firstMessage = null;
+            let secondMessage = null;
 
             // Set up a function to finish processing, ensuring lock is released in all cases
             const finishProcessing = (error, result) => {
@@ -162,22 +172,65 @@ function sendMotorCommand(motorId, commandData) {
 
             tempProcess.stdout.on("data", (data) => {
                 try {
-                    const lines = data.toString().trim().split("\n");
-                    for (const line of lines) {
-                        const items = line.split(" ").filter((e) => e !== "");
+                    const outputLines = data.toString().trim().split("\n");
+                    
+                    // Process each line in the output
+                    for (const line of outputLines) {
+                        const lineSegments = line.split(" ").filter((segment) => segment !== "");
 
                         // Validate data format and source
-                        if (items.length < DATA_INDEX + DATA_LENGTH || items[CAN_BUS_INDEX] !== CAN_BUS || items[CAN_ID_INDEX] !== motorId) {
-                            continue;
+                        if (
+                            lineSegments.length < DATA_INDEX + DATA_LENGTH ||
+                            lineSegments[CAN_BUS_INDEX] !== CAN_BUS ||
+                            lineSegments[CAN_ID_INDEX] !== motorId
+                        ) {
+                            continue; // Skip non-matching data lines
                         }
 
-                        const dataArr = items.slice(DATA_INDEX);
-                        const resDataStr = `${items[CAN_BUS_INDEX]} ${items[CAN_ID_INDEX]}#${dataArr.join(".")}`;
+                        // Extract response data bytes
+                        const responseDataBytes = lineSegments.slice(DATA_INDEX);
 
-                        // Ensure this is not an echo of our sent command
-                        if (resDataStr !== sendCommand && commandData.split(".")[0] === items[DATA_INDEX]) {
+                        // Build response string format
+                        const responseData = `${lineSegments[CAN_ID_INDEX]}#${responseDataBytes.join(".")}`;
+                        const fullResponseString = `${lineSegments[CAN_BUS_INDEX]} ${responseData}`;
+                        
+                        // Increment message count and store message
+                        messageCount++;
+                        const isEcho = fullResponseString.toUpperCase() === sendCommand.toUpperCase();
+
+                        if (messageCount === 1) {
+                            firstMessage = { data: lineSegments, isEcho: isEcho };
+                        } else if (messageCount === 2) {
+                            secondMessage = { data: lineSegments, isEcho: isEcho };
+
+                            // Process the two messages
+                            // Case 1: First is echo, second is ACK
+                            if (firstMessage.isEcho) {
+                                responseReceived = true;
+                                finishProcessing(null, secondMessage.data);
+                                return;
+                            }
+
+                            // Case 2: First is ACK, second is echo
+                            if (!firstMessage.isEcho && secondMessage.isEcho) {
+                                responseReceived = true;
+                                finishProcessing(null, firstMessage.data);
+                                return;
+                            }
+
+                            // If neither case matches, return an error
                             responseReceived = true;
-                            finishProcessing(null, items);
+                            finishProcessing(new Error("Unexpected response pattern"), null);
+                            return;
+                        }
+
+                        // If we've already processed 2 messages, finish processing
+                        if (messageCount > 2) {
+                            // We should have already finished processing by now, but just in case
+                            if (!responseReceived) {
+                                responseReceived = true;
+                                finishProcessing(new Error("Too many messages received"), null);
+                            }
                             return;
                         }
                     }
@@ -194,9 +247,9 @@ function sendMotorCommand(motorId, commandData) {
                 finishProcessing(error);
             });
 
-            tempProcess.on("close", (error) => {
+            tempProcess.on("close", (code) => {
                 if (!responseReceived) {
-                    finishProcessing(error);
+                    finishProcessing(new Error("Incomplete response"), null);
                 }
             });
 
@@ -210,7 +263,7 @@ function sendMotorCommand(motorId, commandData) {
             // Set timeout
             timeoutId = setTimeout(() => {
                 if (!responseReceived) {
-                    finishProcessing(new Error(`Timeout`));
+                    finishProcessing(new Error(`Timeout waiting for response`));
                 }
             }, 1000);
         } catch (error) {

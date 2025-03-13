@@ -49,6 +49,13 @@ function releaseLock() {
  * @param {Array<string>} commandData - Command data as array of hex byte strings
  * @returns {Promise<string>} Response data
  */
+/**
+ * Send a CAN command and wait for response with lock mechanism
+ * @param {string} canBus - CAN bus interface
+ * @param {string} motorId - Motor ID
+ * @param {Array<string>} commandData - Command data as array of hex byte strings
+ * @returns {Promise<string>} Response data
+ */
 function sendMotorCommand(canBus, motorId, commandData) {
     const timeout = 1000;
 
@@ -61,13 +68,15 @@ function sendMotorCommand(canBus, motorId, commandData) {
 
             const commandDataString = commandData.join(".");
             const sendCommand = `${canBus} ${motorId}#${commandDataString}`;
-
             /**
              * @type {ChildProcessWithoutNullStreams}
              */
             let tempProcess = spawn("timeout", [0.5, "candump", canBus], {});
 
             let responseReceived = false;
+            let messageCount = 0;
+            let firstMessage = null;
+            let secondMessage = null;
 
             // Create a function to handle completion in all cases
             const finishProcessing = (error, result) => {
@@ -92,6 +101,7 @@ function sendMotorCommand(canBus, motorId, commandData) {
                 try {
                     const outputLines = rawData.toString().trim().split("\n");
 
+                    // Process each line in the output
                     for (const line of outputLines) {
                         const lineSegments = line.split(" ").filter((segment) => segment !== "");
 
@@ -111,14 +121,44 @@ function sendMotorCommand(canBus, motorId, commandData) {
                         const responseData = `${lineSegments[CAN_ID_INDEX]}#${responseDataBytes.join(".")}`;
                         const fullResponseString = `${lineSegments[CAN_BUS_INDEX]} ${responseData}`;
 
-                        // Check if this is a valid response (not command echo and matching command type)
-                        const commandType = commandData[0];
-                        const responseType = lineSegments[DATA_INDEX];
+                        // Increment message count and store message
+                        messageCount++;
+                        const isEcho = fullResponseString.toUpperCase() === sendCommand.toUpperCase();
 
-                        if (fullResponseString !== sendCommand && commandType === responseType) {
+                        if (messageCount === 1) {
+                            firstMessage = { data: responseData, isEcho: isEcho };
+                        } else if (messageCount === 2) {
+                            secondMessage = { data: responseData, isEcho: isEcho };
+
+                            // Process the two messages
+                            // Case 1: First is echo, second is ACK
+                            if (firstMessage.isEcho) {
+                                responseReceived = true;
+                                finishProcessing(null, secondMessage.data);
+                                return;
+                            }
+
+                            // Case 2: First is ACK, second is echo
+                            if (!firstMessage.isEcho && secondMessage.isEcho) {
+                                responseReceived = true;
+                                finishProcessing(null, firstMessage.data);
+                                return;
+                            }
+
+                            // If neither case matches, return an error
                             responseReceived = true;
-                            finishProcessing(null, responseData);
-                            return; // Exit after finding valid response
+                            finishProcessing(new Error("Unexpected response pattern"), null);
+                            return;
+                        }
+
+                        // If we've already processed 2 messages, finish processing
+                        if (messageCount > 2) {
+                            // We should have already finished processing by now, but just in case
+                            if (!responseReceived) {
+                                responseReceived = true;
+                                finishProcessing(new Error("Too many messages received"), null);
+                            }
+                            return;
                         }
                     }
                 } catch (error) {
@@ -134,9 +174,9 @@ function sendMotorCommand(canBus, motorId, commandData) {
                 finishProcessing(error);
             });
 
-            tempProcess.on("close", (error) => {
+            tempProcess.on("close", (code) => {
                 if (!responseReceived) {
-                    finishProcessing(error);
+                    finishProcessing(new Error("Incomplete response"), null);
                 }
             });
 
@@ -150,7 +190,7 @@ function sendMotorCommand(canBus, motorId, commandData) {
             // Set timeout
             timeoutId = setTimeout(() => {
                 if (!responseReceived) {
-                    finishProcessing(new Error(`Timeout`));
+                    finishProcessing(new Error(`Timeout waiting for response`));
                 }
             }, timeout);
         } catch (error) {
