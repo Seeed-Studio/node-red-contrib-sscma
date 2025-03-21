@@ -174,8 +174,8 @@ module.exports = function (RED) {
                     const result = {
                         success: yawResult.success && pitchResult.success,
                         position: {
-                            yaw: yawResult.position,
-                            pitch: pitchResult.position,
+                            yaw_angle: yawResult.position,
+                            pitch_angle: pitchResult.position,
                         },
                     };
 
