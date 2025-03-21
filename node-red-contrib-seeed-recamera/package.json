@@ -21,12 +21,13 @@
             "set-motor-speed": "nodes/set_motor_speed.js",
             "get-motor-angle": "nodes/get_motor_angle.js",
             "get-motor-speed": "nodes/get_motor_speed.js",
-            "encode-motor-angle": "nodes/encode_motor_angle.js",
-            "decode-motor-angle": "nodes/decode_motor_angle.js",
-            "track": "nodes/track.js"
+            "angle-to-can": "nodes/angle_to_can.js",
+            "can-to-angle": "nodes/can_to_angle.js"
         }
     },
-    "dependencies": {},
+    "dependencies": {
+        "socketcan": "4.0.5"
+    },
     "devDependencies": {
         "@types/node-red": "^1.3.5"
     },

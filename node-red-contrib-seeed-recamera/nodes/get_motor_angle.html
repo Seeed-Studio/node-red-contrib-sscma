@@ -44,7 +44,7 @@
 
 <script type="text/javascript">
     RED.nodes.registerType("get-motor-angle", {
-        category: "reCamera",
+        category: "reCamera gimbal",
         color: "#C6D09C",
         defaults: {
             name: { value: "" },
@@ -73,7 +73,7 @@
 <script type="text/markdown" data-help-name="get-motor-angle">
 # Get Motor Angle
 
-This node retrieves the current angle position of a selected motor from the reCamera Gimbal system.
+This node retrieves the current angle position of a selected motor from the reCamera Gimbal system using SocketCAN direct communication.
 
 ## Overview
 
@@ -125,7 +125,7 @@ The node displays the current angle in its status:
 
 ## Process
 
-1. When triggered by an input message, the node sends a status query to the selected motor
+1. When triggered by an input message, the node sends a status query to the selected motor using SocketCAN
 2. The motor responds with its current position data
 3. The node parses this data and optionally converts it from motor units to degrees
 4. The angle value is sent to the output and displayed in the node status
@@ -138,6 +138,13 @@ The node will report errors in the following cases:
 -   Invalid response from the motor
 -   Concurrent requests (will show "Busy" status)
 
+## Technical Notes
+
+-   Communication is done via SocketCAN library for direct CAN bus control
+-   Motor units are in hundredths of degrees (0.01 degree/LSB)
+-   The raw value is useful for high-precision applications
+-   The converted value is more human-readable
+
 ## Use Cases
 
 -   Monitoring the current camera orientation
@@ -145,10 +152,4 @@ The node will report errors in the following cases:
 -   Implementing closed-loop control systems
 -   Logging or displaying position values
 -   Verifying that movement commands have completed successfully
-
-## Technical Notes
-
--   Motor units are in hundredths of degrees (0.01 degree/LSB)
--   The raw value is useful for high-precision applications
--   The converted value is more human-readable
 </script>

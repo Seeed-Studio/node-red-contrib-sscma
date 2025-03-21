@@ -8,10 +8,12 @@ const {
     PITCH_MAX_VALUE,
     CURRENT_YAW_SPEED_KEY,
     CURRENT_PITCH_SPEED_KEY,
-    GET_CURRENT_STATUS_COMMAND_24,
-    angleToHexString,
-    sendMotorCommand,
-    parseAngle,
+    speedToHexString,
+    convertAngleByUnit,
+    getMotorAngle,
+    setMotorAngle,
+    setMotorOffset,
+    closeCanChannel,
 } = require("../utils/motor_utils");
 
 module.exports = function (RED) {
@@ -24,25 +26,93 @@ module.exports = function (RED) {
         let waitingForAck = false;
 
         /**
-         * Read current motor angle using status command
-         * @param {string} motorId - Motor ID
-         * @returns {Promise<number>} Current angle value
+         * Process single motor movement
+         * @param {string} motorId - Motor ID (YAW_ID or PITCH_ID)
+         * @param {number} angleValue - Angle value in motor units
+         * @param {boolean} isAbsolute - Whether this is absolute positioning
+         * @param {string} speedHex - Motor speed in hex format
+         * @returns {Promise<Object>} Result with success flag and position
          */
-        async function readCurrentAngle(motorId) {
-            try {
-                const statusData = await sendMotorCommand(motorId, GET_CURRENT_STATUS_COMMAND_24);
-                return parseAngle(statusData);
-            } catch (error) {
-                throw new Error(`Failed to read motor angle: ${error.message}`);
+        async function processSingleMotor(motorId, angleValue, isAbsolute, speedHex) {
+            // Read current motor position
+            const currentAngle = await getMotorAngle(motorId);
+            if (currentAngle === null) {
+                throw new Error(`Failed to read current ${motorId === YAW_ID ? "yaw" : "pitch"} angle`);
             }
+
+            let finalPosition; // Store final position (absolute angle)
+
+            if (isAbsolute) {
+                // Absolute angle mode - A6 command
+                let targetAngle = angleValue;
+
+                // Apply angle limits based on motor type
+                if (motorId === YAW_ID) {
+                    targetAngle = Math.max(YAW_MIN_VALUE, Math.min(YAW_MAX_VALUE, targetAngle));
+                } else {
+                    targetAngle = Math.max(PITCH_MIN_VALUE, Math.min(PITCH_MAX_VALUE, targetAngle));
+                }
+
+                finalPosition = targetAngle;
+
+                // Skip if target equals current position
+                if (Math.abs(targetAngle - currentAngle) < 50) {
+                    return { success: true, position: finalPosition / 100 }; // Convert to degrees for output
+                }
+
+                // Set motor angle with A6 command
+                const result = await setMotorAngle(motorId, targetAngle, currentAngle, speedHex);
+
+                if (!result.success) {
+                    throw new Error(`Failed to set ${motorId === YAW_ID ? "yaw" : "pitch"} angle: ${result.error}`);
+                }
+            } else {
+                // Relative offset mode - A8 command
+                // Calculate final position for limit checking
+                finalPosition = currentAngle + angleValue;
+
+                // Adjust offset to respect motor limits
+                if (motorId === YAW_ID) {
+                    if (finalPosition < YAW_MIN_VALUE) {
+                        angleValue = YAW_MIN_VALUE - currentAngle;
+                        finalPosition = YAW_MIN_VALUE;
+                    } else if (finalPosition > YAW_MAX_VALUE) {
+                        angleValue = YAW_MAX_VALUE - currentAngle;
+                        finalPosition = YAW_MAX_VALUE;
+                    }
+                } else {
+                    if (finalPosition < PITCH_MIN_VALUE) {
+                        angleValue = PITCH_MIN_VALUE - currentAngle;
+                        finalPosition = PITCH_MIN_VALUE;
+                    } else if (finalPosition > PITCH_MAX_VALUE) {
+                        angleValue = PITCH_MAX_VALUE - currentAngle;
+                        finalPosition = PITCH_MAX_VALUE;
+                    }
+                }
+
+                // Skip if no actual offset
+                if (Math.abs(angleValue) < 50) {
+                    return { success: true, position: finalPosition / 100 }; // Convert to degrees for output
+                }
+
+                // Set motor offset using A8 command
+                const result = await setMotorOffset(motorId, angleValue, speedHex);
+
+                if (!result.success) {
+                    throw new Error(`Failed to set ${motorId === YAW_ID ? "yaw" : "pitch"} offset: ${result.error}`);
+                }
+            }
+
+            // Return position in degrees
+            return { success: true, position: finalPosition / 100 };
         }
 
         /**
-         * Process motor movement request
+         * Process motor movement request using SocketCAN library
          * @param {Object} msg - Input message
          * @returns {Promise<Object>} Result with success flag and position
          */
-        async function processMotorMove(msg) {
+        async function processCommand(msg) {
             try {
                 // Set processing status
                 node.status({ fill: "blue", shape: "dot", text: "Processing" });
@@ -57,118 +127,102 @@ module.exports = function (RED) {
                 if (inputValue === undefined || inputValue === null) {
                     throw new Error("Input value is empty");
                 }
-                const numInputValue = Number(inputValue);
-                if (isNaN(numInputValue)) {
-                    throw new Error("Input value is not a number");
-                }
 
                 const output = config.output;
+                const unit = config.unit || "0";
 
-                // Determine motor type (yaw or pitch)
-                const isYawMotor = output == "0" || output == "1";
-                const motorId = isYawMotor ? YAW_ID : PITCH_ID;
+                // Check if this is dual axis mode
+                const isDualAxis = output === "4" || output === "5";
+                const isAbsolute = output === "0" || output === "2" || output === "4";
 
-                // Determine control mode (absolute or relative)
-                const isAbsolute = output == "0" || output == "2";
-                const isRelative = !isAbsolute;
-
-                // Convert input value to motor angle units if needed
-                let angelValue = numInputValue;
-                const inputInDegrees = config.inputInDegrees || false;
-                if (inputInDegrees) {
-                    // If input is in degrees, convert to motor units
-                    angelValue = angelValue * 100;
-                }
-
-                // For relative mode with zero offset, return immediately
-                if (isRelative && angelValue === 0) {
-                    node.status({ fill: "green", shape: "dot", text: "Ready" });
-                    return { success: true };
-                }
-
-                // Get motor speed from global context or use default
-                const speedHex = globalContext.get(isYawMotor ? CURRENT_YAW_SPEED_KEY : CURRENT_PITCH_SPEED_KEY) ?? DEFAULT_SPEED;
-
-                // Read current motor position
-                const currentAngelValue = await readCurrentAngle(motorId);
-                let commandData;
-                let finalPosition; // Store final position (absolute angle)
-
-                if (isAbsolute) {
-                    // Absolute angle mode (A6 command)
-                    let targetAngle = angelValue;
-
-                    // Apply angle limits based on motor type
-                    if (motorId == YAW_ID) {
-                        targetAngle = Math.max(YAW_MIN_VALUE, Math.min(YAW_MAX_VALUE, targetAngle));
-                    } else {
-                        targetAngle = Math.max(PITCH_MIN_VALUE, Math.min(PITCH_MAX_VALUE, targetAngle));
+                // Process based on selected mode
+                if (isDualAxis) {
+                    // Dual axis mode - expect JSON object input
+                    if (typeof inputValue !== "object") {
+                        throw new Error("Dual axis mode requires JSON object input");
                     }
 
-                    finalPosition = targetAngle;
-
-                    // Skip if target equals current position
-                    if (targetAngle == currentAngelValue) {
-                        node.status({ fill: "green", shape: "dot", text: "Ready" });
-                        return { success: true, position: finalPosition };
+                    // Validate required fields
+                    if (inputValue.yaw_angle === undefined || inputValue.pitch_angle === undefined) {
+                        throw new Error("Missing required fields: yaw_angle and/or pitch_angle");
                     }
 
-                    // Determine rotation direction (01 for CCW, 00 for CW)
-                    const direction = targetAngle < currentAngelValue ? "01" : "00";
+                    // Set speeds if provided
+                    if (inputValue.yaw_speed !== undefined && !isNaN(Number(inputValue.yaw_speed))) {
+                        const yawSpeedHex = speedToHexString(Number(inputValue.yaw_speed));
+                        globalContext.set(CURRENT_YAW_SPEED_KEY, yawSpeedHex);
+                    }
 
-                    // Generate absolute position command (A6)
-                    const angleHex = angleToHexString(targetAngle);
-                    commandData = `A6.${direction}.${speedHex}.${angleHex}`;
+                    if (inputValue.pitch_speed !== undefined && !isNaN(Number(inputValue.pitch_speed))) {
+                        const pitchSpeedHex = speedToHexString(Number(inputValue.pitch_speed));
+                        globalContext.set(CURRENT_PITCH_SPEED_KEY, pitchSpeedHex);
+                    }
+
+                    // Get current speeds from global context
+                    const yawSpeedHex = globalContext.get(CURRENT_YAW_SPEED_KEY) || DEFAULT_SPEED;
+                    const pitchSpeedHex = globalContext.get(CURRENT_PITCH_SPEED_KEY) || DEFAULT_SPEED;
+
+                    // Convert angle values based on unit setting
+                    const yawAngle = convertAngleByUnit(Number(inputValue.yaw_angle), unit);
+                    const pitchAngle = convertAngleByUnit(Number(inputValue.pitch_angle), unit);
+
+                    // Process yaw and pitch motors
+                    const yawResult = await processSingleMotor(YAW_ID, yawAngle, isAbsolute, yawSpeedHex);
+                    const pitchResult = await processSingleMotor(PITCH_ID, pitchAngle, isAbsolute, pitchSpeedHex);
+
+                    // Combine results
+                    const result = {
+                        success: yawResult.success && pitchResult.success,
+                        position: {
+                            yaw: yawResult.position,
+                            pitch: pitchResult.position,
+                        },
+                    };
+
+                    // Reset status
+                    node.status({
+                        fill: "green",
+                        shape: "dot",
+                        text: `Yaw: ${yawResult.position.toFixed(2)}°, Pitch: ${pitchResult.position.toFixed(2)}°`,
+                    });
+
+                    return result;
                 } else {
-                    // Relative offset mode (A8 command)
-                    // Calculate final position for limit checking
-                    finalPosition = currentAngelValue + angelValue;
-
-                    // Adjust offset to respect motor limits
-                    if (motorId == YAW_ID) {
-                        if (finalPosition < YAW_MIN_VALUE) {
-                            angelValue = YAW_MIN_VALUE - currentAngelValue;
-                            finalPosition = YAW_MIN_VALUE;
-                        } else if (finalPosition > YAW_MAX_VALUE) {
-                            angelValue = YAW_MAX_VALUE - currentAngelValue;
-                            finalPosition = YAW_MAX_VALUE;
-                        }
-                    } else {
-                        if (finalPosition < PITCH_MIN_VALUE) {
-                            angelValue = PITCH_MIN_VALUE - currentAngelValue;
-                            finalPosition = PITCH_MIN_VALUE;
-                        } else if (finalPosition > PITCH_MAX_VALUE) {
-                            angelValue = PITCH_MAX_VALUE - currentAngelValue;
-                            finalPosition = PITCH_MAX_VALUE;
-                        }
+                    // Single axis mode
+                    // Process single value input
+                    const numInputValue = Number(inputValue);
+                    if (isNaN(numInputValue)) {
+                        throw new Error("Input value is not a number");
                     }
 
-                    // Skip if no actual offset
-                    if (angelValue == 0) {
+                    // Determine motor type (yaw or pitch)
+                    const isYawMotor = output === "0" || output === "1";
+                    const motorId = isYawMotor ? YAW_ID : PITCH_ID;
+
+                    // Convert input value to motor angle units
+                    const angleValue = convertAngleByUnit(numInputValue, unit);
+
+                    // For relative mode with zero offset, return immediately
+                    if (!isAbsolute && angleValue === 0) {
                         node.status({ fill: "green", shape: "dot", text: "Ready" });
-                        return { success: true, position: finalPosition };
+                        return { success: true };
                     }
 
-                    // Generate relative offset command (A8)
-                    const offsetHex = angleToHexString(angelValue);
-                    commandData = `A8.00.${speedHex}.${offsetHex}`;
+                    // Get motor speed from global context or use default
+                    const speedHex = globalContext.get(isYawMotor ? CURRENT_YAW_SPEED_KEY : CURRENT_PITCH_SPEED_KEY) ?? DEFAULT_SPEED;
+
+                    // Process the motor command
+                    const result = await processSingleMotor(motorId, angleValue, isAbsolute, speedHex);
+
+                    // Update status
+                    node.status({
+                        fill: "green",
+                        shape: "dot",
+                        text: `${isYawMotor ? "Yaw" : "Pitch"}: ${result.position.toFixed(2)}°`,
+                    });
+
+                    return result;
                 }
-
-                // Send motor control command and wait for ACK
-                await sendMotorCommand(motorId, commandData);
-
-                // Convert output position to degrees if needed
-                let outputPosition = finalPosition;
-                const outputInDegrees = config.outputInDegrees || false;
-                if (outputInDegrees) {
-                    // If output should be in degrees, convert from motor units
-                    outputPosition = Number((finalPosition / 100).toFixed(2));
-                }
-
-                // Reset status
-                node.status({ fill: "green", shape: "dot", text: "Ready" });
-
-                return { success: true, position: outputPosition };
             } catch (error) {
                 node.status({ fill: "red", shape: "ring", text: error.message || "Error" });
                 throw error;
@@ -187,8 +241,8 @@ module.exports = function (RED) {
                 // Set processing flag before async operation
                 waitingForAck = true;
 
-                // Process motor movement request
-                const result = await processMotorMove(msg);
+                // Process command using SocketCAN
+                const result = await processCommand(msg);
 
                 // If processing succeeded and position is available, send it
                 if (result.success && result.position !== undefined) {
@@ -209,7 +263,12 @@ module.exports = function (RED) {
         });
 
         node.on("close", function () {
-            // No resources to clean up
+            // Clean up resources when node is closed
+            try {
+                closeCanChannel();
+            } catch (error) {
+                // Ignore close errors
+            }
         });
     }
 

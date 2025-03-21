@@ -30,7 +30,7 @@
         },
         inputs: 1,
         outputs: 1,
-        icon: "font-awesome/fa-random",
+        icon: "font-awesome/fa-paper-plane",
         paletteLabel: "CAN write",
         label: function () {
             return this.name || "CAN write";
@@ -43,7 +43,7 @@
 <script type="text/markdown" data-help-name="can-write">
 # CAN Write
 
-This node sends CAN bus frames and receives the corresponding response frames.
+This node sends CAN bus frames and receives the corresponding response frames using SocketCAN.
 
 ## Overview
 The CAN Write node allows you to send command frames to CAN bus devices and receive their response frames. It's particularly useful for querying device status, sending control commands, and monitoring responses from CAN bus devices.
@@ -53,49 +53,74 @@ The CAN Write node allows you to send command frames to CAN bus devices and rece
 - **Client**: Select the CAN bus configuration to use (must be configured in a CAN-config node)
 
 ## Input
-The input should be a string representing a CAN frame in standard format:
+The input supports two formats:
 
-```
-ID#data[0].data[1].data[2].data[3].data[4].data[5].data[6].data[7]
+### Format 1: String Format (Recommended)
+A string in the format: `ID#DATA` where ID is the CAN identifier in hexadecimal and DATA is dot-separated hex bytes.
+
+Example: `141#c1.0a.64.00.00.00.00.00`
+
+### Format 2: Object Format
+An object with the following structure:
+
+```json
+{
+  "id": "141",
+  "data": ["A4", "00", "2C", "01", "50", "46", "00", "00"]
+}
 ```
 
 Where:
-- **ID**: The CAN identifier (in hexadecimal without 0x prefix)
-- **data[0-7]**: Data bytes in hexadecimal (without 0x prefix)
-
-### Example Input
-```
-141#A4.00.2C.01.50.46.00.00
-```
-
-This represents:
-- CAN ID: 141 (hex)
-- Data bytes: A4, 00, 2C, 01, 50, 46, 00, 00
+- **id**: The CAN identifier as a string (in hexadecimal without 0x prefix)
+- **data**: Array of data bytes in hexadecimal (without 0x prefix)
 
 ## Output
-The node outputs the response frame received from the CAN bus device. The response typically contains:
+The node outputs an object with the following structure:
 
-1. The same CAN ID as the request
-2. The same first data byte (data[0]) as the request
-3. Additional data bytes containing the response information
+```json
+{
+  "payload": "141#90.00.AB.02.3C.4C.91.49",
+  "details": {
+    "id": "141",
+    "data": ["90", "00", "AB", "02", "3C", "4C", "91", "49"],
+    "raw": "90.00.AB.02.3C.4C.91.49"
+  },
+  "timestamp": 1632048172456,
+  "topic": "can-response"
+}
+```
+
+Where:
+- **payload**: String in the format `ID#DATA`
+- **details**: Object containing detailed information:
+  - **id**: The CAN identifier (same as request)
+  - **data**: Array of response bytes in hexadecimal
+  - **raw**: Dot-separated string of the response bytes
+- **timestamp**: Time when the response was received
+- **topic**: Set to "can-response"
 
 ### Example
-Request frame (Input):
+Request (Input string):
 ```
 141#90.00.00.00.00.00.00.00
 ```
 
-Response frame (Output):
-```
-141#90.00.AB.02.3C.4C.91.49
+Response (Output):
+```json
+{
+  "payload": "141#90.00.AB.02.3C.4C.91.49",
+  "details": {
+    "id": "141",
+    "data": ["90", "00", "AB", "02", "3C", "4C", "91", "49"],
+    "raw": "90.00.AB.02.3C.4C.91.49"
+  },
+  "timestamp": 1632048172456,
+  "topic": "can-response"
+}
 ```
 
-## Response Filtering
-The node automatically filters response frames by matching:
-- The CAN ID of the request
-- The first data byte (data[0]) of the request
-
-This ensures you receive only the relevant response to your specific command.
+## Response Handling
+The node waits for a response from the CAN device and automatically filters response frames to ensure you receive the relevant response to your specific command.
 
 ## Timeout
 If no response is received within the configured timeout period, the node will output an error message.
@@ -108,8 +133,8 @@ The node will report errors in the following cases:
 
 ## Notes
 - All hexadecimal values should be provided without the "0x" prefix
-- Data bytes should be separated by periods
-- The CAN ID and data are separated by the "#" character
+- The node uses SocketCAN for direct CAN bus communication
+- The data must be exactly 8 hexadecimal bytes
 - Not all CAN frames will generate a response; some are one-way commands
-- For continuous monitoring of CAN bus traffic, use the "CAN in" node instead
+- The string format `ID#DATA` is compatible with the CAN Read node output
 </script>

@@ -1,4 +1,10 @@
-const { exec, spawn, ChildProcessWithoutNullStreams } = require("child_process");
+// Only import required modules for SocketCAN
+let socketcan = null;
+try {
+    socketcan = require("socketcan");
+} catch (error) {
+    console.warn("socketcan module not available, SocketCAN method will not work.");
+}
 
 // Motor constants
 const YAW_ID = "141";
@@ -10,18 +16,22 @@ const PITCH_MIN_VALUE = 900;
 const PITCH_MAX_VALUE = 17500;
 const CURRENT_YAW_SPEED_KEY = "can$$currentYawSpeed";
 const CURRENT_PITCH_SPEED_KEY = "can$$currentPitchSpeed";
-const GET_CURRENT_STATUS_COMMAND_24 = "94.00.00.00.00.00.00.00";
+const GET_CURRENT_STATUS_COMMAND = "94.00.00.00.00.00.00.00";
 
-// CAN communication constants
-const DATA_INDEX = 3;
-const DATA_LENGTH = 8;
-const CAN_BUS_INDEX = 0;
-const CAN_ID_INDEX = 1;
+// CAN bus name
 const CAN_BUS = "can0";
 
-// Lock mechanism for CAN bus operations
-let canBusLock = false;
-let lockQueue = [];
+// SocketCAN channel management
+let canChannel = null;
+let currentCommand = null;
+let currentMotorId = null;
+let currentResolver = null;
+let currentRejecter = null;
+let commandTimeout = null;
+
+// Command queue management
+let commandQueue = [];
+let isProcessingQueue = false;
 
 /**
  * Convert speed value to hex string format
@@ -88,216 +98,6 @@ function angleToHexString(angle) {
 }
 
 /**
- * Acquire lock for CAN bus operations
- * @returns {Promise<void>} Resolves when lock is acquired
- */
-const acquireLock = () => {
-    return new Promise((resolve) => {
-        if (!canBusLock) {
-            canBusLock = true;
-            resolve();
-        } else {
-            // If lock is taken, add resolver to queue
-            lockQueue.push(resolve);
-        }
-    });
-};
-
-/**
- * Release lock and process next waiting request if any
- */
-const releaseLock = () => {
-    if (lockQueue.length > 0) {
-        // If queue has waiting requests, wake up the next one
-        const nextResolve = lockQueue.shift();
-        nextResolve();
-    } else {
-        // Otherwise release the lock
-        canBusLock = false;
-    }
-};
-
-/**
- * Send motor command and wait for response, using lock mechanism to prevent concurrency issues
- * @param {string} motorId - Motor ID
- * @param {string} commandData - Command data
- * @returns {Promise<Array>} Response data
- */
-/**
- * Send a motor command and wait for response
- * @param {string} motorId - Motor ID
- * @param {string} commandData - Command data as string (already formatted)
- * @returns {Promise<Array>} Response data items
- */
-function sendMotorCommand(motorId, commandData) {
-    // Return a Promise that wraps lock acquisition and release
-    return new Promise(async (resolve, reject) => {
-        try {
-            // Acquire lock
-            await acquireLock();
-
-            let timeoutId = null;
-
-            // Execute original command sending logic
-            const sendCommand = `${CAN_BUS} ${motorId}#${commandData}`;
-
-            /**
-             * @type {ChildProcessWithoutNullStreams}
-             */
-            let tempProcess = spawn("timeout", [0.5, "candump", CAN_BUS], {});
-            
-            let responseReceived = false;
-            let messageCount = 0;
-            let firstMessage = null;
-            let secondMessage = null;
-
-            // Set up a function to finish processing, ensuring lock is released in all cases
-            const finishProcessing = (error, result) => {
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                    timeoutId = null;
-                }
-                if (tempProcess) {
-                    tempProcess.kill();
-                    tempProcess = null;
-                }
-                releaseLock();
-
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(result);
-                }
-            };
-
-            tempProcess.stdout.on("data", (data) => {
-                try {
-                    const outputLines = data.toString().trim().split("\n");
-                    
-                    // Process each line in the output
-                    for (const line of outputLines) {
-                        const lineSegments = line.split(" ").filter((segment) => segment !== "");
-
-                        // Validate data format and source
-                        if (
-                            lineSegments.length < DATA_INDEX + DATA_LENGTH ||
-                            lineSegments[CAN_BUS_INDEX] !== CAN_BUS ||
-                            lineSegments[CAN_ID_INDEX] !== motorId
-                        ) {
-                            continue; // Skip non-matching data lines
-                        }
-
-                        // Extract response data bytes
-                        const responseDataBytes = lineSegments.slice(DATA_INDEX);
-
-                        // Build response string format
-                        const responseData = `${lineSegments[CAN_ID_INDEX]}#${responseDataBytes.join(".")}`;
-                        const fullResponseString = `${lineSegments[CAN_BUS_INDEX]} ${responseData}`;
-                        
-                        // Increment message count and store message
-                        messageCount++;
-                        const isEcho = fullResponseString.toUpperCase() === sendCommand.toUpperCase();
-
-                        if (messageCount === 1) {
-                            firstMessage = { data: lineSegments, isEcho: isEcho };
-                        } else if (messageCount === 2) {
-                            secondMessage = { data: lineSegments, isEcho: isEcho };
-
-                            // Process the two messages
-                            // Case 1: First is echo, second is ACK
-                            if (firstMessage.isEcho) {
-                                responseReceived = true;
-                                finishProcessing(null, secondMessage.data);
-                                return;
-                            }
-
-                            // Case 2: First is ACK, second is echo
-                            if (!firstMessage.isEcho && secondMessage.isEcho) {
-                                responseReceived = true;
-                                finishProcessing(null, firstMessage.data);
-                                return;
-                            }
-
-                            // If neither case matches, return an error
-                            responseReceived = true;
-                            finishProcessing(new Error("Unexpected response pattern"), null);
-                            return;
-                        }
-
-                        // If we've already processed 2 messages, finish processing
-                        if (messageCount > 2) {
-                            // We should have already finished processing by now, but just in case
-                            if (!responseReceived) {
-                                responseReceived = true;
-                                finishProcessing(new Error("Too many messages received"), null);
-                            }
-                            return;
-                        }
-                    }
-                } catch (error) {
-                    finishProcessing(error);
-                }
-            });
-
-            tempProcess.stderr.on("data", (data) => {
-                finishProcessing(new Error(`candump stderr: ${data}`));
-            });
-
-            tempProcess.on("error", (error) => {
-                finishProcessing(error);
-            });
-
-            tempProcess.on("close", (code) => {
-                if (!responseReceived) {
-                    finishProcessing(new Error("Incomplete response"), null);
-                }
-            });
-
-            // Send command
-            exec(`cansend ${sendCommand}`, (error, stdout, stderr) => {
-                if (error || stderr) {
-                    finishProcessing(new Error(`exec error: ${error || stderr}`));
-                }
-            });
-
-            // Set timeout
-            timeoutId = setTimeout(() => {
-                if (!responseReceived) {
-                    finishProcessing(new Error(`Timeout waiting for response`));
-                }
-            }, 1000);
-        } catch (error) {
-            releaseLock();
-            reject(error);
-        }
-    });
-}
-
-/**
- * Parse angle value from motor status data
- * @param {Array} statusData - Motor status data
- * @returns {number} Parsed angle value
- */
-function parseAngle(statusData) {
-    if (!statusData || statusData.length < DATA_INDEX + 6) {
-        throw new Error("Invalid status data");
-    }
-
-    const angleHex = statusData
-        .slice(DATA_INDEX + 4, DATA_INDEX + 6)
-        .reverse()
-        .join("");
-    let angleValue = parseInt(angleHex, 16);
-
-    // Handle abnormal values
-    if (angleValue > 35600) {
-        angleValue = 0;
-    }
-
-    return angleValue;
-}
-
-/**
  * Convert hex string in format "byte1.byte2.byte3.byte4" to signed 32-bit integer
  * @param {string} hexString - Hex string in "XX.XX.XX.XX" format
  * @returns {number} Converted signed integer value
@@ -327,13 +127,375 @@ function hexToAngle(hexString) {
     }
 }
 
+/**
+ * Convert angle value based on unit setting
+ * @param {number} value - Input value
+ * @param {string} unit - Unit setting ('0' for decimal, '1' for integer)
+ * @returns {number} Converted value in motor units
+ */
+function convertAngleByUnit(value, unit) {
+    if (unit === "1") {
+        // Integer input (e.g., 18023 -> 180.23 degrees)
+        return value;
+    } else {
+        // Decimal input (e.g., 180.23 -> 180.23 degrees)
+        return value * 100;
+    }
+}
+
+/**
+ * Initialize the SocketCAN channel
+ * @returns {Object} SocketCAN channel object
+ */
+function initCanChannel() {
+    if (!canChannel) {
+        try {
+            if (!socketcan) {
+                throw new Error("socketcan module not available");
+            }
+            canChannel = socketcan.createRawChannel(CAN_BUS, true);
+
+            // Add global message handler
+            canChannel.addListener("onMessage", handleSocketCANMessage);
+            canChannel.start();
+        } catch (error) {
+            console.error(`Error initializing SocketCAN channel:`, error);
+            throw new Error(`Unable to initialize SocketCAN channel: ${error.message}`);
+        }
+    }
+    return canChannel;
+}
+
+/**
+ * Close the SocketCAN channel
+ */
+function closeCanChannel() {
+    if (canChannel) {
+        try {
+            // Clean up current command state
+            clearCommandState();
+
+            canChannel.stop();
+            canChannel = null;
+        } catch (error) {
+            console.error(`Error closing SocketCAN channel:`, error);
+        }
+    }
+}
+
+/**
+ * Clear current command state
+ */
+function clearCommandState() {
+    if (commandTimeout) {
+        clearTimeout(commandTimeout);
+        commandTimeout = null;
+    }
+
+    currentCommand = null;
+    currentMotorId = null;
+    currentResolver = null;
+    currentRejecter = null;
+}
+
+/**
+ * Process the next command in the queue
+ */
+async function processNextCommand() {
+    // If already processing or queue is empty, return
+    if (isProcessingQueue || commandQueue.length === 0 || currentCommand) {
+        return;
+    }
+
+    // Set flag to indicate we're processing
+    isProcessingQueue = true;
+
+    try {
+        // Get the next command from the queue
+        const nextCmd = commandQueue.shift();
+        const { motorId, commandString, timeout, resolve, reject } = nextCmd;
+
+        // Execute the command
+        await executeCommand(motorId, commandString, timeout, resolve, reject);
+    } catch (error) {
+        console.error("Error processing command queue:", error);
+    } finally {
+        // Reset processing flag
+        isProcessingQueue = false;
+
+        // Check if there are more commands to process
+        if (commandQueue.length > 0 && !currentCommand) {
+            // Process next command after a short delay to allow state reset
+            setTimeout(processNextCommand, 50);
+        }
+    }
+}
+
+/**
+ * Execute a specific CAN command
+ * @param {number} motorId - Motor ID (decimal)
+ * @param {string} commandString - Dot-separated hex command
+ * @param {number} timeout - Timeout in milliseconds
+ * @param {Function} resolve - Promise resolve function
+ * @param {Function} reject - Promise reject function
+ */
+async function executeCommand(motorId, commandString, timeout, resolve, reject) {
+    if (!socketcan) {
+        reject(new Error("socketcan module not available"));
+        return;
+    }
+
+    // If another command is being processed, queue this one
+    if (currentCommand) {
+        reject(new Error("Internal error: Command state conflict"));
+        return;
+    }
+
+    try {
+        // Ensure CAN channel is initialized
+        const channel = initCanChannel();
+
+        // Prepare command data
+        const commandBuffer = Buffer.from(commandString.replace(/\./g, ""), "hex");
+
+        // Set current command state
+        currentCommand = commandString;
+        currentMotorId = motorId;
+        currentResolver = resolve;
+        currentRejecter = reject;
+
+        // Set timeout timer
+        commandTimeout = setTimeout(() => {
+            // Clean up state
+            const resolver = currentResolver;
+            clearCommandState();
+
+            // Return timeout result
+            resolver({
+                success: false,
+                error: "Timeout",
+            });
+
+            // Process next command if any
+            processNextCommand();
+        }, timeout);
+
+        // Send command
+        channel.send({
+            id: motorId,
+            data: commandBuffer,
+            ext: false,
+            rtr: false,
+        });
+    } catch (error) {
+        // Clean up state
+        clearCommandState();
+        reject(new Error(`Failed to send command: ${error.message}`));
+
+        // Process next command if any
+        processNextCommand();
+    }
+}
+
+/**
+ * SocketCAN message handler
+ * @param {Object} msg - SocketCAN message
+ */
+function handleSocketCANMessage(msg) {
+    // If no pending command, return
+    if (!currentCommand || !currentResolver || msg.id !== currentMotorId) {
+        return;
+    }
+
+    // Print received data for debugging
+    const dataHex = Buffer.from(msg.data)
+        .toString("hex")
+        .match(/.{1,2}/g)
+        .join(".")
+        .toLowerCase();
+
+    // Check if this is a response to the current command
+    const cmdHex = currentCommand.replace(/\./g, "").toLowerCase();
+    if (dataHex !== cmdHex) {
+        // Not command echo
+        // Parse angle - only for status query command responses
+        let angle = null;
+        if (currentCommand.startsWith("94")) {
+            try {
+                angle = parseAngle(msg.data);
+            } catch (error) {
+                console.warn(`Failed to parse response data: ${error.message}`);
+            }
+        }
+
+        // Clear timeout timer
+        if (commandTimeout) {
+            clearTimeout(commandTimeout);
+            commandTimeout = null;
+        }
+
+        // Call resolver and clear state
+        const resolver = currentResolver;
+        clearCommandState();
+
+        resolver({
+            success: true,
+            data: msg.data,
+            angle: angle,
+        });
+
+        // Process next command if any
+        setTimeout(processNextCommand, 50);
+    }
+}
+
+/**
+ * Parse angle from SocketCAN response data
+ * @param {Buffer} statusData - Status data
+ * @returns {number} Parsed angle value
+ */
+function parseAngle(statusData) {
+    if (!statusData || statusData.length < 6) {
+        throw new Error("Invalid status data");
+    }
+
+    // Use bytes 4 and 5
+    const lowByte = statusData[4];
+    const highByte = statusData[5];
+
+    // Combine to get angle value
+    const angleValue = (highByte << 8) | lowByte;
+
+    // Handle abnormal values
+    if (angleValue > 35600) {
+        return 0;
+    }
+
+    return angleValue;
+}
+
+/**
+ * Send motor command using SocketCAN and wait for response
+ * @param {number} motorId - Motor ID (decimal)
+ * @param {string} commandString - Dot-separated hex command
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Object>} Response object
+ */
+async function sendCommand(motorId, commandString, timeout = 1000) {
+    return new Promise((resolve, reject) => {
+        // Add command to queue
+        commandQueue.push({
+            motorId,
+            commandString,
+            timeout,
+            resolve,
+            reject,
+        });
+
+        // Start processing the queue if not already processing
+        if (!isProcessingQueue && !currentCommand) {
+            processNextCommand();
+        }
+    });
+}
+
+/**
+ * Set motor angle using SocketCAN
+ * @param {string} motorId - Motor ID (hex)
+ * @param {number} targetAngle - Target angle
+ * @param {number} currentAngle - Current angle
+ * @param {string} speedHex - Speed hex string
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Object>} Result object
+ */
+async function setMotorAngle(motorId, targetAngle, currentAngle, speedHex = DEFAULT_SPEED, timeout = 1000) {
+    try {
+        // Determine rotation direction: 01 for CCW, 00 for CW
+        const direction = targetAngle < currentAngle ? "01" : "00";
+
+        // Convert target angle to hex
+        const angleHex = angleToHexString(targetAngle);
+
+        // Build set angle command
+        const command = `A6.${direction}.${speedHex}.${angleHex}`;
+
+        // Send command
+        const result = await sendCommand(
+            parseInt(motorId, 16), // Convert to decimal
+            command,
+            timeout,
+        );
+
+        if (result.success) {
+            return { success: true, angle: targetAngle };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Set motor offset using SocketCAN with A8 command
+ * @param {string} motorId - Motor ID (hex)
+ * @param {number} offsetValue - Offset value
+ * @param {string} speedHex - Speed hex string
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Object>} Result object
+ */
+async function setMotorOffset(motorId, offsetValue, speedHex = DEFAULT_SPEED, timeout = 1000) {
+    try {
+        // Convert offset to hex
+        const offsetHex = angleToHexString(offsetValue);
+
+        // Build relative offset command (A8)
+        const command = `A8.00.${speedHex}.${offsetHex}`;
+
+        // Send command
+        const result = await sendCommand(
+            parseInt(motorId, 16), // Convert to decimal
+            command,
+            timeout,
+        );
+
+        if (result.success) {
+            return { success: true };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Get current motor angle using SocketCAN
+ * @param {string} motorId - Motor ID (hex)
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<number|null>} Current angle or null
+ */
+async function getMotorAngle(motorId, timeout = 1000) {
+    try {
+        // Send status query command
+        const result = await sendCommand(
+            parseInt(motorId, 16), // Convert to decimal
+            GET_CURRENT_STATUS_COMMAND,
+            timeout,
+        );
+
+        if (result.success && result.angle !== null) {
+            return result.angle;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        return null;
+    }
+}
+
 module.exports = {
-    speedToHexString,
-    hexToSpeed,
-    angleToHexString,
-    hexToAngle,
-    sendMotorCommand,
-    parseAngle,
+    // Constants
     YAW_ID,
     PITCH_ID,
     DEFAULT_SPEED,
@@ -343,5 +505,19 @@ module.exports = {
     PITCH_MAX_VALUE,
     CURRENT_YAW_SPEED_KEY,
     CURRENT_PITCH_SPEED_KEY,
-    GET_CURRENT_STATUS_COMMAND_24,
+
+    // Conversion utilities
+    speedToHexString,
+    hexToSpeed,
+    angleToHexString,
+    hexToAngle,
+    convertAngleByUnit,
+
+    // SocketCAN functions
+    initCanChannel,
+    closeCanChannel,
+    sendCommand,
+    setMotorAngle,
+    setMotorOffset,
+    getMotorAngle,
 };

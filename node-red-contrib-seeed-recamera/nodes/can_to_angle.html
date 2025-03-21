@@ -1,4 +1,4 @@
-<script type="text/html" data-template-name="decode-motor-angle">
+<script type="text/html" data-template-name="can-to-angle">
     <div class="form-row">
         <label for="node-input-name">
             <i class="fa fa-tag"></i>
@@ -16,8 +16,8 @@
 </script>
 
 <script type="text/javascript">
-    RED.nodes.registerType("decode-motor-angle", {
-        category: "reCamera",
+    RED.nodes.registerType("can-to-angle", {
+        category: "reCamera gimbal",
         color: "#C6D09C",
         defaults: {
             name: { value: "" },
@@ -26,9 +26,9 @@
         inputs: 1,
         outputs: 1,
         icon: "font-awesome/fa-exchange",
-        paletteLabel: "decode motor angle",
+        paletteLabel: "CAN to angle",
         label: function () {
-            return this.name || "decode motor angle";
+            return this.name || "CAN to angle";
         },
         oneditprepare: function () {
             const node = this;
@@ -40,8 +40,8 @@
     });
 </script>
 
-<script type="text/markdown" data-help-name="decode-motor-angle">
-# Decode Motor Angle
+<script type="text/markdown" data-help-name="can-to-angle">
+# CAN to angle
 
 This node decodes CAN bus motor control commands into human-readable angle values for reCamera Gimbal motors.
 
@@ -127,4 +127,4 @@ For relative offset commands (A8) with raw values:
 - Motor units are in hundredths of degrees (0.01 degree/LSB)
 - The raw value is useful for high-precision applications
 - The converted value is more human-readable
-</script>
+</script> 

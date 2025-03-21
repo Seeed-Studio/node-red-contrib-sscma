@@ -1,0 +1,81 @@
+<script type="text/javascript">
+    RED.nodes.registerType('can-read', {
+        category: "CAN Bus",
+        color: "#A6D996",
+        defaults: {
+            name: { value: "" },
+            client: { value: "", type: "can-config", required: true }
+        },
+        inputs: 0,  // 无输入
+        outputs: 1, // 1个输出
+        icon: "font-awesome/fa-inbox",
+        label: function() {
+            return this.name || "CAN Read";
+        },
+        paletteLabel: "CAN read",
+        oneditprepare: function() {
+            // 此处可以添加打开编辑对话框时的逻辑
+        },
+        oneditsave: function() {
+            // 此处可以添加保存设置时的逻辑
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="can-read">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-client"><i class="fa fa-globe"></i> CAN Config</label>
+        <input type="text" id="node-input-client">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="can-read">
+    <p>A node that continuously listens for CAN messages on the configured interface.</p>
+    
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">string</span></dt>
+        <dd>
+            A string in the format "ID#DATA" (e.g., "141#c1.0a.64.00.00.00.00.00")
+            where ID is the CAN message ID in hexadecimal and DATA is dot-separated hex bytes.
+        </dd>
+        <dt>details <span class="property-type">object</span></dt>
+        <dd>
+            <ul>
+                <li><b>id</b> - CAN message ID in hexadecimal format</li>
+                <li><b>data</b> - Array of 8 bytes in hexadecimal format</li>
+                <li><b>raw</b> - Dot-separated hex string of the data bytes</li>
+            </ul>
+        </dd>
+        <dt>timestamp <span class="property-type">number</span></dt>
+        <dd>Timestamp when the message was received (milliseconds since epoch)</dd>
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>Set to "can-message"</dd>
+    </dl>
+    
+    <h3>Details</h3>
+    <p>This node automatically starts listening for CAN messages on the configured interface when deployed.</p>
+    <p>It will output a message for each CAN frame received on the bus.</p>
+    <p>The output format is compatible with the CAN Write node, using the standard "ID#DATA" format.</p>
+    
+    <h3>Example Output</h3>
+    <pre>{
+  "payload": "141#c1.0a.64.00.00.00.00.00",
+  "details": {
+    "id": "141",
+    "data": ["C1", "0A", "64", "00", "00", "00", "00", "00"],
+    "raw": "C1.0A.64.00.00.00.00.00"
+  },
+  "timestamp": 1632048172456,
+  "topic": "can-message"
+}</pre>
+    
+    <h3>References</h3>
+    <ul>
+        <li><a href="https://github.com/seeedstudio/node-red-contrib-seeed-canbus">GitHub</a> - the nodes github repository</li>
+    </ul>
+</script> 

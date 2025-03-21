@@ -1,7 +1,7 @@
 const { YAW_ID, PITCH_ID, hexToAngle } = require("../utils/motor_utils");
 
 module.exports = function (RED) {
-    function DecodeMotorAngleNode(config) {
+    function CanToAngleNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
 
@@ -94,5 +94,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("decode-motor-angle", DecodeMotorAngleNode);
-};
+    RED.nodes.registerType("can-to-angle", CanToAngleNode);
+}; 

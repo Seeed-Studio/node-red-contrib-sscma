@@ -1,4 +1,4 @@
-const { sendMotorCommand, checkCanPayloadInput } = require("../utils/can_utils");
+const { sendMotorCommand, checkCanPayloadInput, closeCanChannel } = require("../utils/can_utils");
 
 module.exports = function (RED) {
     function CanWriteNode(config) {
@@ -11,9 +11,11 @@ module.exports = function (RED) {
 
         // Handle input messages
         node.on("input", function (msg) {
-            // If already waiting for a response, notify upstream nodes
+            // If already waiting for a response, send busy message to error output
             if (waitingForResponse) {
                 node.status({ fill: "yellow", shape: "ring", text: "Busy" });
+                // 发送错误消息到错误输出，这样流可以处理忙碌状态
+                node.error("Node is busy processing another command", msg);
                 return;
             }
 
@@ -24,10 +26,31 @@ module.exports = function (RED) {
                     throw new Error("CAN interface not configured");
                 }
 
-                const data = msg.payload;
-
-                // Validate input data format
-                const { id, items } = checkCanPayloadInput(data);
+                let id, items;
+                
+                // 支持两种输入格式：对象或字符串
+                if (typeof msg.payload === 'string') {
+                    // 处理字符串格式: "141#c1.0a.64.00.00.00.00.00"
+                    const parts = msg.payload.split('#');
+                    if (parts.length !== 2) {
+                        throw new Error("Invalid string format. Expected: ID#DATA (e.g. 141#c1.0a.64.00.00.00.00.00)");
+                    }
+                    
+                    id = parts[0].trim();
+                    items = parts[1].split('.').map(item => item.trim());
+                    
+                    // 验证数据部分
+                    if (items.length !== 8) {
+                        throw new Error("Data must contain exactly 8 bytes");
+                    }
+                } else {
+                    // 处理对象格式: { id: "141", data: ["C1", "0A", ...] }
+                    const data = msg.payload;
+                    // Validate input data format
+                    const validated = checkCanPayloadInput(data);
+                    id = validated.id;
+                    items = validated.items;
+                }
 
                 // Set status to "Processing"
                 waitingForResponse = true;
@@ -36,25 +59,40 @@ module.exports = function (RED) {
                 // Use sendMotorCommand to send command and wait for response
                 sendMotorCommand(canInterface, id, items)
                     .then((responseData) => {
-                        // Send successful response to downstream nodes
+                        // 生成标准格式字符串输出
+                        const canMessage = `${id}#${responseData.join('.')}`;
+                        
+                        // 同时提供详细信息供高级处理
+                        const detailsObj = {
+                            id: id,
+                            data: responseData,
+                            raw: responseData.join('.')
+                        };
+
+                        // 发送统一格式的响应
                         node.send({
-                            payload: responseData,
+                            payload: canMessage,
+                            details: detailsObj
                         });
 
                         // Update node status
                         node.status({
                             fill: "green",
                             shape: "dot",
-                            text: "Success",
+                            text: canMessage
                         });
                     })
                     .catch((error) => {
+                        // 处理系统繁忙错误
+                        const isBusy = error.message.includes('BUSY');
+                        const statusText = isBusy ? "System Busy" : (error.message || "Error");
+                        
                         // Handle errors
-                        node.error(`Error: ${error.message}`);
+                        node.error(`Error: ${error.message}`, msg);
                         node.status({
                             fill: "red",
                             shape: "ring",
-                            text: error.message || "Error",
+                            text: statusText
                         });
                     })
                     .finally(() => {
@@ -62,15 +100,28 @@ module.exports = function (RED) {
                         waitingForResponse = false;
                     });
             } catch (error) {
+                // 处理输入验证或其他错误
+                const isBusy = error.message.includes('BUSY');
+                const statusText = isBusy ? "System Busy" : (error.message || "Error");
+                
                 // Handle input validation errors
-                node.error(`Error: ${error.message}`);
+                node.error(`Error: ${error.message}`, msg);
                 node.status({
                     fill: "red",
                     shape: "ring",
-                    text: error.message || "Error",
+                    text: statusText
                 });
 
                 waitingForResponse = false;
+            }
+        });
+
+        // Clean up resources when node is closed
+        node.on("close", function() {
+            try {
+                closeCanChannel();
+            } catch (error) {
+                // Ignore close errors
             }
         });
     }

@@ -38,7 +38,7 @@
 
 <script type="text/javascript">
     RED.nodes.registerType("set-motor-speed", {
-        category: "reCamera",
+        category: "reCamera gimbal",
         color: "#C6D09C",
         defaults: {
             name: { value: "" },
@@ -76,7 +76,7 @@ This node configures the rotation speed for a selected motor in the reCamera Gim
 
 ## Overview
 
-The node sets the speed value for either the yaw (horizontal) or pitch (vertical) motor. This speed setting is stored in the global context and used by other motor control nodes when sending movement commands.
+The node sets the speed value for either the yaw (horizontal) or pitch (vertical) motor. This speed setting is stored in the global context and used by other motor control nodes when sending movement commands using SocketCAN.
 
 ## Input
 
@@ -122,13 +122,12 @@ The node updates the following global context variables:
 -   Yaw motor: `can$$currentYawSpeed`
 -   Pitch motor: `can$$currentPitchSpeed`
 
-## Notes
+## Technical Notes
 
--   The speed value is stored in hexadecimal format in the global context
--   This node does not have any outputs as it only updates the global context
--   The speed setting persists until changed by another "set motor speed" node
--   Setting a higher speed results in faster but potentially less precise movements
--   Setting a lower speed results in slower but more precise movements
+-   This node works with the SocketCAN communication system used by other motor control nodes
+-   The speed value is stored in hexadecimal format (e.g., "5A.00" for speed 90) in the global context
+-   The motor control nodes retrieve these values when sending commands through the CAN bus
+-   The default speed value is 90 if no custom speed has been set
 
 ## Error Handling
 

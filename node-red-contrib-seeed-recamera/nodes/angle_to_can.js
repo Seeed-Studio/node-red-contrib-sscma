@@ -12,7 +12,7 @@ const {
 } = require("../utils/motor_utils");
 
 module.exports = function (RED) {
-    function EncodeMotorAngleNode(config) {
+    function AngleToCanNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
         const globalContext = node.context().global;
@@ -101,5 +101,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType("encode-motor-angle", EncodeMotorAngleNode);
-};
+    RED.nodes.registerType("angle-to-can", AngleToCanNode);
+}; 

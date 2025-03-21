@@ -19,10 +19,13 @@
         "version": ">=2.0.0",
         "nodes": {
             "can-config": "nodes/can_config.js",
-            "can-write": "nodes/can_write.js"
+            "can-write": "nodes/can_write.js",
+            "can-read": "nodes/can_read.js"
         }
     },
-    "dependencies": {},
+    "dependencies": {
+        "socketcan": "4.0.5"
+    },
     "devDependencies": {
         "@types/node-red": "^1.3.5"
     },

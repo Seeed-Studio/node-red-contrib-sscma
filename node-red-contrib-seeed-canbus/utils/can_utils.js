@@ -1,268 +1,440 @@
-const { exec, spawn, ChildProcessWithoutNullStreams } = require("child_process");
+const { exec } = require("child_process");
 const util = require("util");
+
+// Add socketcan module import
+let socketcan = null;
+try {
+    socketcan = require("socketcan");
+} catch (error) {
+    console.warn("socketcan module not available, SocketCAN method will not work.");
+}
 
 const execAsync = util.promisify(exec);
 
-// CAN communication constants
-const DATA_INDEX = 3;
-const DATA_LENGTH = 8;
-const CAN_BUS_INDEX = 0;
-const CAN_ID_INDEX = 1;
+// SocketCAN channel management
+let canChannel = null;
+let currentCommand = null;
+let currentMotorId = null;
+let currentResolver = null;
+let currentRejecter = null;
+let commandTimeout = null;
 
-let canBusLock = false;
-let lockQueue = [];
+// Command queue management
+let commandQueue = [];
+let isProcessingQueue = false;
+
+// Track received messages - 简化状态变量
+let receivedMessage = null;
+
+// 外部消息处理器列表
+let externalMessageHandlers = [];
 
 /**
- * Acquire lock for CAN bus operations
- * @returns {Promise<void>} Resolves when lock is acquired
+ * 添加外部消息处理器
+ * @param {Function} handler - 消息处理函数
+ * @returns {number} 处理器ID，用于后续移除
  */
-function acquireLock() {
-    return new Promise((resolve) => {
-        if (!canBusLock) {
-            canBusLock = true;
-            resolve();
-        } else {
-            // If lock is taken, add resolver to queue
-            lockQueue.push(resolve);
-        }
-    });
+function addMessageHandler(handler) {
+    if (typeof handler !== 'function') {
+        throw new Error('Message handler must be a function');
+    }
+    externalMessageHandlers.push(handler);
+    return externalMessageHandlers.length - 1; // 返回处理器ID
 }
 
 /**
- * Release lock and process next waiting request if any
+ * 移除外部消息处理器
+ * @param {number} handlerId - 处理器ID
  */
-function releaseLock() {
-    if (lockQueue.length > 0) {
-        // If queue has waiting requests, wake up the next one
-        const nextResolve = lockQueue.shift();
-        nextResolve();
-    } else {
-        // Otherwise release the lock
-        canBusLock = false;
+function removeMessageHandler(handlerId) {
+    if (handlerId >= 0 && handlerId < externalMessageHandlers.length) {
+        // 将处理器替换为null，而不是从数组中移除，以保持ID稳定
+        externalMessageHandlers[handlerId] = null;
     }
 }
 
 /**
- * Send a CAN command and wait for response with lock mechanism
- * @param {string} canBus - CAN bus interface
- * @param {string} motorId - Motor ID
- * @param {Array<string>} commandData - Command data as array of hex byte strings
- * @returns {Promise<string>} Response data
+ * Initialize the SocketCAN channel
+ * @param {string} canInterface - CAN bus interface name
+ * @returns {Object} SocketCAN channel object
  */
-/**
- * Send a CAN command and wait for response with lock mechanism
- * @param {string} canBus - CAN bus interface
- * @param {string} motorId - Motor ID
- * @param {Array<string>} commandData - Command data as array of hex byte strings
- * @returns {Promise<string>} Response data
- */
-function sendMotorCommand(canBus, motorId, commandData) {
-    const timeout = 1000;
-
-    return new Promise(async (resolve, reject) => {
+function initCanChannel(canInterface) {
+    if (!canChannel) {
         try {
-            // Acquire lock before proceeding
-            await acquireLock();
+            if (!socketcan) {
+                throw new Error("socketcan module not available");
+            }
+            canChannel = socketcan.createRawChannel(canInterface, true);
+            
+            // Add global message handler
+            canChannel.addListener("onMessage", handleSocketCANMessage);
+            canChannel.start();
+        } catch (error) {
+            console.error(`Error initializing SocketCAN channel:`, error);
+            throw new Error(`Unable to initialize SocketCAN channel: ${error.message}`);
+        }
+    }
+    return canChannel;
+}
 
-            let timeoutId = null;
+/**
+ * Close the SocketCAN channel
+ */
+function closeCanChannel() {
+    if (canChannel) {
+        try {
+            // Clean up current command state
+            clearCommandState();
+            
+            canChannel.stop();
+            canChannel = null;
+        } catch (error) {
+            console.error(`Error closing SocketCAN channel:`, error);
+        }
+    }
+}
 
-            const commandDataString = commandData.join(".");
-            const sendCommand = `${canBus} ${motorId}#${commandDataString}`;
-            /**
-             * @type {ChildProcessWithoutNullStreams}
-             */
-            let tempProcess = spawn("timeout", [0.5, "candump", canBus], {});
+/**
+ * Clear current command state
+ */
+function clearCommandState() {
+    if (commandTimeout) {
+        clearTimeout(commandTimeout);
+        commandTimeout = null;
+    }
+    
+    currentCommand = null;
+    currentMotorId = null;
+    currentResolver = null;
+    currentRejecter = null;
+    receivedMessage = null;
+}
 
-            let responseReceived = false;
-            let messageCount = 0;
-            let firstMessage = null;
-            let secondMessage = null;
+/**
+ * Process the next command in the queue
+ */
+async function processNextCommand() {
+    // If already processing or queue is empty, return
+    if (isProcessingQueue || commandQueue.length === 0 || currentCommand) {
+        return;
+    }
 
-            // Create a function to handle completion in all cases
-            const finishProcessing = (error, result) => {
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                    timeoutId = null;
-                }
-                if (tempProcess) {
-                    tempProcess.kill();
-                    tempProcess = null;
-                }
-                releaseLock(); // Release lock when done
+    // Set flag to indicate we're processing
+    isProcessingQueue = true;
 
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve(result);
-                }
-            };
+    try {
+        // Get the next command from the queue
+        const nextCmd = commandQueue.shift();
+        const { canInterface, motorId, commandData, timeout, resolve, reject } = nextCmd;
 
-            tempProcess.stdout.on("data", (rawData) => {
-                try {
-                    const outputLines = rawData.toString().trim().split("\n");
+        // Execute the command
+        await executeCommand(canInterface, motorId, commandData, timeout, resolve, reject);
+    } catch (error) {
+        console.error("Error processing command queue:", error);
+    } finally {
+        // Reset processing flag
+        isProcessingQueue = false;
 
-                    // Process each line in the output
-                    for (const line of outputLines) {
-                        const lineSegments = line.split(" ").filter((segment) => segment !== "");
+        // Check if there are more commands to process
+        if (commandQueue.length > 0 && !currentCommand) {
+            // Process next command after a short delay to allow state reset
+            setTimeout(processNextCommand, 50);
+        }
+    }
+}
 
-                        // Validate data format and source
-                        if (
-                            lineSegments.length < DATA_INDEX + DATA_LENGTH ||
-                            lineSegments[CAN_BUS_INDEX] !== canBus ||
-                            lineSegments[CAN_ID_INDEX] !== motorId
-                        ) {
-                            continue; // Skip non-matching data lines
-                        }
+/**
+ * Execute a specific CAN command
+ * @param {string} canInterface - CAN bus interface name
+ * @param {string} motorId - Motor ID (hex)
+ * @param {Array<string>} commandData - Command data array
+ * @param {number} timeout - Timeout in milliseconds
+ * @param {Function} resolve - Promise resolve function
+ * @param {Function} reject - Promise reject function
+ */
+async function executeCommand(canInterface, motorId, commandData, timeout, resolve, reject) {
+    if (!socketcan) {
+        reject(new Error("socketcan module not available"));
+        return;
+    }
 
-                        // Extract response data bytes
-                        const responseDataBytes = lineSegments.slice(DATA_INDEX);
+    try {
+        // Convert command data array to dot-separated string
+        const commandString = commandData.join('.');
+        
+        // Convert motor ID from hex string to decimal
+        const motorIdDecimal = parseInt(motorId, 16);
+        
+        // Ensure CAN channel is initialized
+        const channel = initCanChannel(canInterface);
+        
+        // If a command is already being processed, reject with error
+        if (currentCommand) {
+            reject(new Error("Internal error: Command state conflict"));
+            return;
+        }
+        
+        // Prepare command data
+        const commandBuffer = Buffer.from(commandString.replace(/\./g, ''), 'hex');
+        
+        // Set current command state
+        clearCommandState(); // Clear any previous state
+        currentCommand = commandString;
+        currentMotorId = motorIdDecimal;
+        currentResolver = resolve;
+        currentRejecter = reject;
+        
+        // Set timeout timer
+        commandTimeout = setTimeout(() => {
+            console.error(`Command timeout: Motor ${motorId} not responding`);
+            
+            // 简化超时处理逻辑
+            const resolver = currentResolver;
+            clearCommandState();
+            
+            // 返回超时结果
+            resolver({
+                success: false,
+                error: "Timeout"
+            });
+            
+            // Process next command if any
+            processNextCommand();
+        }, timeout);
+        
+        // Send command
+        channel.send({
+            id: motorIdDecimal,
+            data: commandBuffer,
+            ext: false,
+            rtr: false
+        });
+    } catch (error) {
+        // Clean up state
+        clearCommandState();
+        reject(new Error(`Failed to send command: ${error.message}`));
+        
+        // Process next command if any
+        processNextCommand();
+    }
+}
 
-                        // Build response string format
-                        const responseData = `${lineSegments[CAN_ID_INDEX]}#${responseDataBytes.join(".")}`;
-                        const fullResponseString = `${lineSegments[CAN_BUS_INDEX]} ${responseData}`;
+/**
+ * Process the response and resolve the promise
+ */
+function processResponse() {
+    // If no message received or no resolver, return
+    if (!receivedMessage || !currentResolver) {
+        return;
+    }
+    
+    // Clear timeout timer
+    if (commandTimeout) {
+        clearTimeout(commandTimeout);
+        commandTimeout = null;
+    }
+        
+    // 调用resolver并清理状态
+    const resolver = currentResolver;
+    const responseData = receivedMessage;
+    clearCommandState();
+    
+    // 返回成功的结果
+    resolver({
+        success: true,
+        data: responseData.data,
+        rawHex: responseData.dataHex
+    });
+    
+    // Process next command if any
+    setTimeout(processNextCommand, 50);
+}
 
-                        // Increment message count and store message
-                        messageCount++;
-                        const isEcho = fullResponseString.toUpperCase() === sendCommand.toUpperCase();
+/**
+ * SocketCAN message handler
+ * @param {Object} msg - SocketCAN message
+ */
+function handleSocketCANMessage(msg) {
+    // If no pending command, return
+    if (currentCommand && currentResolver && msg.id === currentMotorId) {
+        // Convert data to hex string
+        const dataHex = Buffer.from(msg.data).toString('hex').match(/.{1,2}/g).join('.');
+        
+        // 存储接收到的消息 - 简化为只存储单个消息
+        receivedMessage = {
+            data: msg.data,
+            dataHex: dataHex
+        };
+                
+        // 收到消息后立即处理响应
+        processResponse();
+    }
+    
+    // 调用所有注册的外部消息处理器
+    for (let i = 0; i < externalMessageHandlers.length; i++) {
+        const handler = externalMessageHandlers[i];
+        if (handler) {
+            try {
+                handler(msg);
+            } catch (error) {
+                console.error(`Error in external message handler ${i}: ${error.message}`);
+            }
+        }
+    }
+}
 
-                        if (messageCount === 1) {
-                            firstMessage = { data: responseData, isEcho: isEcho };
-                        } else if (messageCount === 2) {
-                            secondMessage = { data: responseData, isEcho: isEcho };
-
-                            // Process the two messages
-                            // Case 1: First is echo, second is ACK
-                            if (firstMessage.isEcho) {
-                                responseReceived = true;
-                                finishProcessing(null, secondMessage.data);
-                                return;
-                            }
-
-                            // Case 2: First is ACK, second is echo
-                            if (!firstMessage.isEcho && secondMessage.isEcho) {
-                                responseReceived = true;
-                                finishProcessing(null, firstMessage.data);
-                                return;
-                            }
-
-                            // If neither case matches, return an error
-                            responseReceived = true;
-                            finishProcessing(new Error("Unexpected response pattern"), null);
-                            return;
-                        }
-
-                        // If we've already processed 2 messages, finish processing
-                        if (messageCount > 2) {
-                            // We should have already finished processing by now, but just in case
-                            if (!responseReceived) {
-                                responseReceived = true;
-                                finishProcessing(new Error("Too many messages received"), null);
-                            }
-                            return;
+/**
+ * Send CAN command using SocketCAN and wait for response
+ * @param {string} canInterface - CAN bus interface name
+ * @param {string} motorId - Motor ID (hex)
+ * @param {Array<string>} commandData - Command data array
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Array>} Response data
+ */
+async function sendMotorCommand(canInterface, motorId, commandData, timeout = 1000) {
+    if (!socketcan) {
+        throw new Error("socketcan module not available");
+    }
+    
+    return new Promise((resolve, reject) => {
+        // Add command to queue
+        commandQueue.push({
+            canInterface,
+            motorId,
+            commandData,
+            timeout,
+            resolve: result => {
+                if (result.success) {
+                    // Process the data into the format expected by existing code
+                    const responseData = [];
+                    if (result.data) {
+                        // Convert Buffer to Array of hex strings
+                        for (let i = 0; i < result.data.length; i++) {
+                            responseData.push(result.data[i].toString(16).padStart(2, '0').toUpperCase());
                         }
                     }
-                } catch (error) {
-                    finishProcessing(error);
+                    resolve(responseData);
+                } else {
+                    reject(new Error(result.error || "Unknown error"));
                 }
-            });
-
-            tempProcess.stderr.on("data", (data) => {
-                finishProcessing(new Error(`candump stderr: ${data}`));
-            });
-
-            tempProcess.on("error", (error) => {
-                finishProcessing(error);
-            });
-
-            tempProcess.on("close", (code) => {
-                if (!responseReceived) {
-                    finishProcessing(new Error("Incomplete response"), null);
-                }
-            });
-
-            // Send command
-            exec(`cansend ${sendCommand}`, (error, stdout, stderr) => {
-                if (error || stderr) {
-                    finishProcessing(new Error(`exec error: ${error || stderr}`));
-                }
-            });
-
-            // Set timeout
-            timeoutId = setTimeout(() => {
-                if (!responseReceived) {
-                    finishProcessing(new Error(`Timeout waiting for response`));
-                }
-            }, timeout);
-        } catch (error) {
-            // Make sure to release lock in case of unexpected errors
-            releaseLock();
-            reject(error);
+            },
+            reject
+        });
+        
+        // Start processing the queue if not already processing
+        if (!isProcessingQueue && !currentCommand) {
+            processNextCommand();
         }
     });
 }
 
 /**
- * Validate CAN data format
- * @param {string} data - CAN data string
- * @returns {object} Parsed ID and data items
+ * Check if CAN payload input is valid
+ * @param {Object|String} data - Input data to check (object or string format)
+ * @returns {Object} Validated input data
  */
 function checkCanPayloadInput(data) {
-    if (typeof data !== "string") {
-        throw new Error("Payload must be a string");
+    let id, items;
+
+    // 处理字符串格式输入: "141#c1.0a.64.00.00.00.00.00"
+    if (typeof data === 'string') {
+        const parts = data.split('#');
+        if (parts.length !== 2) {
+            throw new Error("Invalid string format. Expected: ID#DATA (e.g. 141#c1.0a.64.00.00.00.00.00)");
+        }
+        
+        id = parts[0].trim();
+        items = parts[1].split('.').map(item => item.trim());
+        
+        // 验证ID是否为有效的十六进制字符串
+        if (!/^[0-9A-Fa-f]+$/.test(id)) {
+            throw new Error(`CAN ID ${id} is not a valid hex value`);
+        }
+        
+        // 验证数据部分
+        if (items.length !== 8) {
+            throw new Error("Data must contain exactly 8 bytes");
+        }
+    }
+    // 处理对象格式输入: { id: "141", data: ["C1", "0A", ...] }
+    else if (data && typeof data === "object") {
+        id = data.id;
+        items = data.data;
+
+        if (!id || typeof id !== "string") {
+            throw new Error("CAN ID must be a string");
+        }
+
+        if (!items || !Array.isArray(items)) {
+            throw new Error("Data items must be an array");
+        }
+    }
+    else {
+        throw new Error("Payload must be an object or a string in format 'ID#DATA'");
     }
 
-    const [id, dataToSend] = data.split("#");
-    if (!id || !dataToSend) {
-        throw new Error("Payload must be in the format 'id#data'");
+    // 验证数组长度
+    if (items.length !== 8) {
+        throw new Error("Data items must be exactly 8 bytes");
     }
 
-    const items = dataToSend.split(".");
-    if (items.length !== 8 || items.some((item) => item.length !== 2)) {
-        throw new Error("Data must be 8 bytes in hexadecimal format");
+    // 验证每个项是有效的十六进制字节
+    for (let i = 0; i < items.length; i++) {
+        if (typeof items[i] !== 'string' || !/^[0-9A-Fa-f]{2}$/.test(items[i])) {
+            throw new Error(`Data byte at index ${i} (${items[i]}) is not a valid hex byte`);
+        }
     }
 
     return { id, items };
 }
 
-function getCanInterfaces(interfaceName = "can") {
-    return new Promise((resolve, reject) => {
-        exec("ifconfig -a", (error, stdout) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-            const interfaces = [];
-            const lines = stdout.split("\n");
-            let currentInterface = null;
+/**
+ * Get available CAN interfaces
+ * @param {string} interfaceName - Base interface name to search for
+ * @returns {Promise<Array<string>>} Array of interface names
+ */
+async function getCanInterfaces(interfaceName = "can") {
+    try {
+        const { stdout } = await execAsync("ip -d link show");
+        const lines = stdout.split("\n");
+        const interfaces = [];
 
-            for (const line of lines) {
-                // macOS 格式: "en0: flags=8863<UP,BROADCAST,..."
-                // Linux 格式: "can0      Link encap:UNSPEC  HWaddr..."
-                const interfaceMatch = line.match(/^(\S+)[\s:]/) || line.match(/^(\S+)\s+Link/);
-
-                if (interfaceMatch) {
-                    currentInterface = interfaceMatch[1].trim();
-                    // 如果是以 ${interfaceName} 开头的接口，添加到结果中
-                    if (currentInterface.toLowerCase().startsWith(interfaceName)) {
-                        if (currentInterface[currentInterface.length - 1] === ":") {
-                            currentInterface = currentInterface.slice(0, -1);
-                        }
-                        interfaces.push(currentInterface);
-                    }
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith(interfaceName)) {
+                const parts = line.split(":");
+                if (parts.length > 1) {
+                    interfaces.push(parts[1].trim());
                 }
             }
+        }
 
-            resolve(interfaces);
-        });
-    });
+        return interfaces;
+    } catch (error) {
+        console.error(`Error getting CAN interfaces: ${error.message}`);
+        return [];
+    }
 }
 
+/**
+ * Run a shell command
+ * @param {string} command - Command to run
+ * @returns {Promise<Object>} Command result
+ */
 async function runCommand(command) {
-    const { stdout, stderr } = await execAsync(command);
-    if (stderr) {
-        throw new Error(stderr);
+    try {
+        const { stdout, stderr } = await execAsync(command);
+        return {
+            success: true,
+            stdout,
+            stderr,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message,
+        };
     }
-    return stdout;
 }
 
 module.exports = {
@@ -270,8 +442,8 @@ module.exports = {
     checkCanPayloadInput,
     getCanInterfaces,
     runCommand,
-    DATA_INDEX,
-    DATA_LENGTH,
-    CAN_BUS_INDEX,
-    CAN_ID_INDEX,
+    initCanChannel,
+    closeCanChannel,
+    addMessageHandler,
+    removeMessageHandler
 };
